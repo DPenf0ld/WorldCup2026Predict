@@ -2,8 +2,6 @@ import 'dotenv/config';
 
 console.log('[startup] SendGrid key loaded:', !!process.env.SENDGRID_API_KEY);
 
-import { setServers } from 'dns';
-setServers(['8.8.8.8', '8.8.4.4']); // override if local DNS resolver is unavailable
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -21,10 +19,15 @@ import { sanitizeBody } from './middleware/sanitize.js';
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.use(helmet());
+if (!process.env.CLIENT_URL) {
+  console.error('FATAL: CLIENT_URL env var is not set');
+  process.exit(1);
+}
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: process.env.CLIENT_URL,
     credentials: true,
   })
 );

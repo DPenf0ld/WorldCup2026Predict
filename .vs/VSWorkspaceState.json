@@ -1,11 +1,7 @@
 {
   "ExpandedNodes": [
     "",
-    "\\client",
-    "\\server",
-    "\\server\\src",
-    "\\server\\src\\services"
+    "\\server"
   ],
-  "SelectedNode": "\\server\\src\\services\\email.js",
   "PreviewInSolutionExplorer": false
 }

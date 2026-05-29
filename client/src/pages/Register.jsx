@@ -183,7 +183,7 @@ export default function Register() {
                 value={form.referralCode}
                 onChange={set('referralCode')}
                 className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 font-mono uppercase tracking-widest text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
-                placeholder="KICKOFF2026"
+                placeholder="REFERRAL"
               />
               <p className="mt-1 text-xs text-slate-500">Ask your league admin for a code</p>
             </div>

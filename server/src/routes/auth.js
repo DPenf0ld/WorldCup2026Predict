@@ -73,7 +73,12 @@ router.post('/send-verification-code', authLimiter, async (req, res) => {
       { upsert: true, new: true }
     );
 
-    sendVerificationCode(email, name || 'there', code).catch(console.error);
+    try {
+      await sendVerificationCode(email, name || 'there', code);
+    } catch (emailErr) {
+      console.error('[auth] Failed to send verification email:', emailErr.message);
+      return res.status(502).json({ error: 'Could not send verification email. Please try again shortly.' });
+    }
 
     res.json({ message: 'Verification code sent. Check your email.' });
   } catch (err) {
@@ -312,7 +317,7 @@ router.post('/reset-password', authLimiter, async (req, res) => {
 
 // ── Refresh token ─────────────────────────────────────────────────────────────
 
-router.post('/refresh', async (req, res) => {
+router.post('/refresh', authLimiter, async (req, res) => {
   try {
     const token = req.cookies?.refreshToken;
     if (!token) return res.status(401).json({ error: 'No refresh token' });
