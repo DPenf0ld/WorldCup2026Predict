@@ -22,7 +22,7 @@ export const KNOCKOUT_DEADLINES = {
 // Group stage predictions close 48 hours before each individual match.
 export const GROUP_STAGE_DEADLINE_OFFSET_MS = 48 * 60 * 60 * 1000;
 
-// Knockout stages cannot end in a draw — one team always advances (via penalties if needed).
+// All knockout stages — no draws possible. If level after extra time, penalties decide the winner.
 export const KNOCKOUT_STAGES = new Set([
   STAGES.ROUND_OF_32,
   STAGES.ROUND_OF_16,

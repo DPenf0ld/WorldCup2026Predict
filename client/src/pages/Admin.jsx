@@ -197,60 +197,60 @@ function ResultsTab({ secret }) {
                       : 'border-slate-700 bg-slate-800'
                   }`}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-32 shrink-0 text-xs text-slate-400">
-                      {kickoff.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      {m.group && <span className="ml-1 text-slate-500">· Grp {m.group}</span>}
-                    </div>
-
-                    <div className="flex flex-1 items-center gap-3 min-w-0">
-                      <span className="flex-1 truncate text-right text-sm font-medium text-white">
-                        {m.homeTeam}
-                      </span>
-
-                      <div className="flex shrink-0 items-center gap-1">
-                        <input
-                          type="number"
-                          min="0"
-                          value={sc.home}
-                          onChange={(e) => setScore(m._id, 'home', e.target.value)}
-                          className="w-12 rounded border border-slate-600 bg-slate-700 px-1 py-1 text-center text-sm font-bold text-white focus:border-emerald-500 focus:outline-none"
-                        />
-                        <span className="text-slate-500">–</span>
-                        <input
-                          type="number"
-                          min="0"
-                          value={sc.away}
-                          onChange={(e) => setScore(m._id, 'away', e.target.value)}
-                          className="w-12 rounded border border-slate-600 bg-slate-700 px-1 py-1 text-center text-sm font-bold text-white focus:border-emerald-500 focus:outline-none"
-                        />
-                      </div>
-
-                      <span className="flex-1 truncate text-left text-sm font-medium text-white">
-                        {m.awayTeam}
-                      </span>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-2">
-                      {errors[m._id] && (
-                        <span className="text-xs text-red-400">{errors[m._id]}</span>
-                      )}
-                      {m.resultEntered && !saved[m._id] && (
-                        <span className="text-xs text-emerald-500">✓ Entered</span>
-                      )}
-                      <button
-                        onClick={() => submit(m._id, m)}
-                        disabled={saving[m._id] || sc.home === '' || sc.away === ''}
-                        className="rounded-md bg-emerald-700 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
-                      >
-                        {saving[m._id] ? '…' : saved[m._id] ? 'Saved ✓' : m.resultEntered ? 'Update' : 'Set Result'}
-                      </button>
-                    </div>
+                  {/* Date / group / status label */}
+                  <div className="mb-2 text-xs text-slate-400">
+                    {kickoff.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    {m.group && <span className="ml-1 text-slate-500">· Group {m.group}</span>}
+                    {m.resultEntered && !saved[m._id] && (
+                      <span className="ml-2 text-emerald-500">✓ Entered</span>
+                    )}
                   </div>
 
-                  {/* Penalty winner picker — only shown for knockout matches with level scores */}
+                  {/* Teams + score inputs + save button on one row */}
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1 truncate text-right text-sm font-medium text-white">
+                      {m.homeTeam}
+                    </span>
+
+                    <div className="flex shrink-0 items-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        value={sc.home}
+                        onChange={(e) => setScore(m._id, 'home', e.target.value)}
+                        className="w-12 rounded border border-slate-600 bg-slate-700 px-1 py-1.5 text-center text-sm font-bold text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                      <span className="text-slate-500">–</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={sc.away}
+                        onChange={(e) => setScore(m._id, 'away', e.target.value)}
+                        className="w-12 rounded border border-slate-600 bg-slate-700 px-1 py-1.5 text-center text-sm font-bold text-white focus:border-emerald-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <span className="flex-1 truncate text-left text-sm font-medium text-white">
+                      {m.awayTeam}
+                    </span>
+
+                    <button
+                      onClick={() => submit(m._id, m)}
+                      disabled={saving[m._id] || sc.home === '' || sc.away === ''}
+                      className="shrink-0 rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+                    >
+                      {saving[m._id] ? '…' : saved[m._id] ? 'Saved ✓' : m.resultEntered ? 'Update' : 'Save'}
+                    </button>
+                  </div>
+
+                  {/* Error message */}
+                  {errors[m._id] && (
+                    <p className="mt-1.5 text-xs text-red-400">{errors[m._id]}</p>
+                  )}
+
+                  {/* Penalty winner picker */}
                   {needsPen && (
-                    <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-900/20 px-3 py-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-amber-900/20 px-3 py-2">
                       <span className="text-xs text-amber-400 shrink-0">Penalty winner:</span>
                       {[['home', m.homeTeam], ['away', m.awayTeam]].map(([side, name]) => (
                         <button
@@ -328,7 +328,7 @@ function LeaguesTab({ secret }) {
     <div className="space-y-8">
       <div>
         <h2 className="mb-4 text-lg font-semibold text-white">Create League</h2>
-        <form onSubmit={handleCreate} className="flex gap-3 rounded-xl border border-slate-700 bg-slate-800 p-5">
+        <form onSubmit={handleCreate} className="flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-800 p-5 sm:flex-row">
           <input
             type="text"
             required
@@ -553,12 +553,11 @@ const TABS = [
 ];
 
 export default function Admin() {
-  const [secret, setSecret] = useState(() => sessionStorage.getItem('adminSecret') ?? '');
+  const [secret, setSecret] = useState('');
   const [authed, setAuthed] = useState(false);
   const [tab, setTab] = useState('results');
 
   const handleAuth = (s) => {
-    sessionStorage.setItem('adminSecret', s);
     setSecret(s);
     setAuthed(true);
   };
@@ -576,7 +575,7 @@ export default function Admin() {
             </span>
           </div>
           <button
-            onClick={() => { sessionStorage.removeItem('adminSecret'); setAuthed(false); }}
+            onClick={() => { setSecret(''); setAuthed(false); }}
             className="rounded-md bg-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-600"
           >
             Lock

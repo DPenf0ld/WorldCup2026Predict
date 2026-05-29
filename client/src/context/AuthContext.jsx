@@ -47,8 +47,11 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
-  const register = async (name, email, password, referralCode) => {
-    const { data } = await api.post('/auth/register', { name, email, password, referralCode });
+  // OTP-verified registration — user is logged in immediately on success
+  const register = async (name, email, password, referralCode, verificationCode) => {
+    const { data } = await api.post('/auth/register', {
+      name, email, password, referralCode, verificationCode,
+    });
     setAccessToken(data.accessToken);
     setUser(data.user);
     return data.user;

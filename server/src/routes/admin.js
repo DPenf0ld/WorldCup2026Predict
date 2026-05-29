@@ -71,6 +71,12 @@ router.post('/referral-codes', async (req, res) => {
     if (!code || !leagueId || !maxUses) {
       return res.status(400).json({ error: 'code, leagueId, and maxUses are required' });
     }
+    if (typeof code !== 'string' || code.length > 50 || !/^[A-Z0-9_-]+$/i.test(code)) {
+      return res.status(400).json({ error: 'code must be 1–50 alphanumeric characters' });
+    }
+    if (!Number.isInteger(Number(maxUses)) || Number(maxUses) < 1 || Number(maxUses) > 10000) {
+      return res.status(400).json({ error: 'maxUses must be an integer between 1 and 10000' });
+    }
 
     const league = await League.findById(leagueId);
     if (!league) return res.status(404).json({ error: 'League not found' });
@@ -92,6 +98,7 @@ router.post('/leagues', async (req, res) => {
   try {
     const { name } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'name is required' });
+    if (name.length > 100) return res.status(400).json({ error: 'League name must be 100 characters or fewer' });
     const league = await League.create({ name: name.trim(), referralCodes: [], members: [] });
     res.status(201).json({ league: { id: league._id, name: league.name, memberCount: 0, referralCodes: [] } });
   } catch (err) {

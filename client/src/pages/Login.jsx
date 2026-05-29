@@ -17,7 +17,7 @@ export default function Login() {
       await login(form.email, form.password);
       navigate('/fixtures');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      setError(err.response?.data?.error || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -39,7 +39,9 @@ export default function Login() {
           <h2 className="mb-6 text-xl font-semibold text-white">Sign in</h2>
 
           {error && (
-            <div className="mb-4 rounded-lg bg-red-900/40 px-4 py-3 text-sm text-red-400">{error}</div>
+            <div className="mb-4 rounded-lg bg-red-900/40 px-4 py-3 text-sm text-red-400">
+              {error}
+            </div>
           )}
 
           <div className="space-y-4">
@@ -55,7 +57,12 @@ export default function Login() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">Password</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-sm font-medium text-slate-300">Password</label>
+                <Link to="/forgot-password" className="text-xs text-emerald-400 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 required

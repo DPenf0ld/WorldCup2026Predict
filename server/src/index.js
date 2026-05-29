@@ -1,4 +1,7 @@
 import 'dotenv/config';
+
+console.log('[startup] SendGrid key loaded:', !!process.env.SENDGRID_API_KEY);
+
 import { setServers } from 'dns';
 setServers(['8.8.8.8', '8.8.4.4']); // override if local DNS resolver is unavailable
 import express from 'express';
@@ -13,6 +16,8 @@ import predictionRoutes from './routes/predictions.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import adminRoutes from './routes/admin.js';
 import leagueRoutes from './routes/leagues.js';
+import { apiLimiter } from './middleware/rateLimiter.js';
+import { sanitizeBody } from './middleware/sanitize.js';
 
 const app = express();
 
@@ -25,6 +30,8 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+app.use(apiLimiter);
+app.use(sanitizeBody);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/matches', matchRoutes);

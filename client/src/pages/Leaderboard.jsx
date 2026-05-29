@@ -131,13 +131,13 @@ export default function Leaderboard() {
           <p className="mb-4 text-sm text-slate-400">
             {data.league.name} · {data.leaderboard.length} members
           </p>
-          <div className="overflow-hidden rounded-xl border border-slate-700">
+          <div className="overflow-x-auto rounded-xl border border-slate-700">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-700 bg-slate-800 text-xs uppercase tracking-wider text-slate-400">
                   <th className="px-4 py-3 text-left">#</th>
                   <th className="px-4 py-3 text-left">Player</th>
-                  <th className="px-4 py-3 text-right">Predictions</th>
+                  <th className="hidden sm:table-cell px-4 py-3 text-right">Predictions</th>
                   <th className="px-4 py-3 text-right">Points</th>
                 </tr>
               </thead>
@@ -162,7 +162,7 @@ export default function Leaderboard() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-300">{entry.predictionsScored}</td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-right text-slate-300">{entry.predictionsScored}</td>
                       <td className="px-4 py-3 text-right font-bold text-white">{entry.totalPoints}</td>
                     </tr>
                   );

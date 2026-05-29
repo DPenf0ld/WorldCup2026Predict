@@ -21,11 +21,24 @@ function processQueue(error, token) {
   failedQueue = [];
 }
 
+// Auth endpoints that may legitimately return 401 — do not attempt a silent
+// token refresh for these, or the refresh error will mask the real error.
+const NO_REFRESH_PATHS = [
+  '/auth/login',
+  '/auth/refresh',
+  '/auth/register',
+  '/auth/send-verification-code',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+];
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
-    if (error.response?.status !== 401 || original._retried) {
+    const skipRefresh = NO_REFRESH_PATHS.some((p) => original.url?.includes(p));
+
+    if (error.response?.status !== 401 || original._retried || skipRefresh) {
       return Promise.reject(error);
     }
 

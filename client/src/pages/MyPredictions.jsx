@@ -73,43 +73,45 @@ export default function MyPredictions() {
           return (
             <div
               key={pred._id}
-              className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800 px-4 py-3"
+              className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3"
             >
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-slate-400 mb-1">
-                  {STAGE_LABELS[match.stage]} ·{' '}
-                  {kickoff.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                </div>
-                <div className="flex items-center gap-2 text-sm font-medium text-white">
-                  <span className="truncate">{match.homeTeam}</span>
-                  <span className="text-slate-500">vs</span>
-                  <span className="truncate">{match.awayTeam}</span>
-                </div>
-              </div>
-
-              <div className="ml-4 flex items-center gap-4 shrink-0">
-                <div className="text-center">
-                  <div className="text-xs text-slate-500 mb-0.5">Your pick</div>
-                  <div className="font-bold text-white">
-                    {pred.predictedHomeScore}–{pred.predictedAwayScore}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-slate-400 mb-1">
+                    {STAGE_LABELS[match.stage]} ·{' '}
+                    {kickoff.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm font-medium text-white">
+                    <span className="truncate">{match.homeTeam}</span>
+                    <span className="text-slate-500">vs</span>
+                    <span className="truncate">{match.awayTeam}</span>
                   </div>
                 </div>
 
-                {match.resultEntered && (
+                <div className="flex items-center gap-4 sm:ml-4 sm:shrink-0">
                   <div className="text-center">
-                    <div className="text-xs text-slate-500 mb-0.5">Result</div>
-                    <div className="font-bold text-slate-300">
-                      {match.homeScore}–{match.awayScore}
+                    <div className="text-xs text-slate-500 mb-0.5">Your pick</div>
+                    <div className="font-bold text-white">
+                      {pred.predictedHomeScore}–{pred.predictedAwayScore}
                     </div>
                   </div>
-                )}
 
-                <div className="w-16 text-right">
-                  {match.resultEntered ? (
-                    pointsBadge(pred.pointsAwarded)
-                  ) : (
-                    <span className="text-xs text-slate-500">Pending</span>
+                  {match.resultEntered && (
+                    <div className="text-center">
+                      <div className="text-xs text-slate-500 mb-0.5">Result</div>
+                      <div className="font-bold text-slate-300">
+                        {match.homeScore}–{match.awayScore}
+                      </div>
+                    </div>
                   )}
+
+                  <div className="text-right">
+                    {match.resultEntered ? (
+                      pointsBadge(pred.pointsAwarded)
+                    ) : (
+                      <span className="text-xs text-slate-500">Pending</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

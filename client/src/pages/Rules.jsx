@@ -58,19 +58,29 @@ export default function Rules() {
         <Section title="🔴 Knockout Rounds — No Draws">
           <div className="space-y-3 text-sm text-slate-300">
             <p>
-              From the Round of 32 onwards, matches cannot end in a draw. If scores are level
-              after 90 minutes (and extra time), one team advances on <span className="font-semibold text-white">penalties</span>.
+              From the <span className="font-semibold text-white">Round of 32</span> onwards, one team must always advance — there are no draws. If scores are level after 90 minutes, the match goes to extra time and then <span className="font-semibold text-amber-400">penalties</span> if still level.
             </p>
             <p>
-              When predicting a knockout match, if you enter equal scores (e.g. 1–1) a{' '}
+              When predicting any knockout match, if you enter equal scores (e.g. 1–1) a{' '}
               <span className="font-semibold text-amber-400">penalty winner picker</span> will
               appear — you must select which team you think wins the shootout before you can submit.
             </p>
-            <div className="rounded-lg bg-slate-700/40 px-4 py-3 text-xs text-slate-400 space-y-1">
+            <div className="rounded-lg bg-slate-700/40 px-4 py-3 text-xs text-slate-400 space-y-2">
               <p className="font-semibold text-slate-300">How the outcome point works in knockouts:</p>
-              <p>→ Your predicted winner is whoever wins overall — either by scoring more goals, or by winning penalties if you predicted a draw score.</p>
+              <p>→ Your predicted winner is whoever wins overall — either by scoring more goals, or by winning on penalties if you predicted a draw score.</p>
               <p>→ If you predicted 2–1 (home win) and the result was 1–1 with the home team winning on penalties, you get the outcome point — both mean the home team advances.</p>
               <p>→ The exact score point only applies to the 90-minute score, not the penalty result.</p>
+            </div>
+            <div className="rounded-lg bg-emerald-900/20 border border-emerald-800/40 px-4 py-3 text-xs space-y-1">
+              <p className="font-semibold text-emerald-300">Example — any knockout round</p>
+              <p className="text-slate-300">Result: <span className="font-semibold text-white">1–1 (Team A wins on penalties)</span></p>
+              <p className="text-slate-300">Your prediction: <span className="font-semibold text-white">Team A 2–0</span></p>
+              <ul className="mt-1 space-y-1 text-slate-400">
+                <li>❌ Exact score — wrong (2–0 ≠ 1–1)</li>
+                <li>✅ Total goals — correct (both 2 goals)</li>
+                <li>✅ Outcome — correct (Team A advances)</li>
+              </ul>
+              <p className="mt-1 font-semibold text-emerald-400">Score: 2 pts</p>
             </div>
           </div>
         </Section>

@@ -5,7 +5,7 @@ import { KNOCKOUT_STAGES } from '../config/constants.js';
 function overallWinner(homeScore, awayScore, stage, penaltyWinner) {
   if (homeScore > awayScore) return 'home';
   if (awayScore > homeScore) return 'away';
-  // Scores level — in knockout the penalty winner decides; in group it's a draw
+  // Scores level — in all knockout rounds penalties decide; in group stage it's a draw
   if (KNOCKOUT_STAGES.has(stage) && penaltyWinner) return penaltyWinner;
   return 'draw';
 }

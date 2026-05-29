@@ -84,7 +84,7 @@ export default function MatchCard({ match }) {
 
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition hover:border-slate-600">
-      <div className="mb-3 flex items-center justify-between text-xs text-slate-400">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-y-1 text-xs text-slate-400">
         <span>{dateStr} · {timeStr}</span>
         <div className="flex items-center gap-2">
           {match.group && <span className="rounded bg-slate-700 px-1.5 py-0.5">Group {match.group}</span>}
@@ -103,7 +103,7 @@ export default function MatchCard({ match }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <span className="flex-1 text-right text-sm font-semibold">{match.homeTeam}</span>
 
         <div className="flex items-center gap-2">

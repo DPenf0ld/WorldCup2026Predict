@@ -10,6 +10,7 @@ import Leaderboard from './pages/Leaderboard';
 import MyPredictions from './pages/MyPredictions';
 import Admin from './pages/Admin';
 import Rules from './pages/Rules';
+import ForgotPassword from './pages/ForgotPassword';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +35,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route
               path="/fixtures"
               element={
