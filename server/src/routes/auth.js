@@ -40,7 +40,7 @@ function setRefreshCookie(res, token) {
   res.cookie('refreshToken', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: REFRESH_COOKIE_MAX_AGE,
     path: '/api/auth/refresh',
   });
@@ -317,7 +317,7 @@ router.post('/reset-password', authLimiter, async (req, res) => {
 
 // ── Refresh token ─────────────────────────────────────────────────────────────
 
-router.post('/refresh', authLimiter, async (req, res) => {
+router.post('/refresh', async (req, res) => {
   try {
     const token = req.cookies?.refreshToken;
     if (!token) return res.status(401).json({ error: 'No refresh token' });
@@ -346,7 +346,11 @@ router.post('/refresh', authLimiter, async (req, res) => {
 // ── Logout ────────────────────────────────────────────────────────────────────
 
 router.post('/logout', (req, res) => {
-  res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/api/auth/refresh',
+  });
   res.json({ message: 'Logged out' });
 });
 

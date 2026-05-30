@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const BASE = import.meta.env.VITE_API_URL || '/api';
@@ -712,12 +713,20 @@ export default function Admin() {
               Kickoff 2026
             </span>
           </div>
-          <button
-            onClick={() => { setSecret(''); setAuthed(false); }}
-            className="rounded-md bg-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-600"
-          >
-            Lock
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/fixtures"
+              className="rounded-md bg-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-600"
+            >
+              Return to app
+            </Link>
+            <button
+              onClick={() => { setSecret(''); setAuthed(false); }}
+              className="rounded-md bg-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-600"
+            >
+              Lock
+            </button>
+          </div>
         </div>
       </header>
 
