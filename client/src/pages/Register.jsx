@@ -73,7 +73,7 @@ export default function Register() {
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl border border-slate-700 bg-slate-800 p-8 shadow-xl"
+          className="rounded-2xl border border-slate-700 bg-slate-800 p-5 sm:p-8 shadow-xl"
         >
           <h2 className="mb-6 text-xl font-semibold text-white">Create account</h2>
 
@@ -100,21 +100,21 @@ export default function Register() {
             {/* Email + send code button */}
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">Email</label>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <input
                   type="email"
                   required
                   value={form.email}
                   onChange={set('email')}
                   disabled={codeSent}
-                  className="flex-1 rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none disabled:opacity-60"
+                  className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none disabled:opacity-60 sm:flex-1"
                   placeholder="you@example.com"
                 />
                 <button
                   type="button"
                   onClick={handleSendCode}
                   disabled={sendingCode || codeSent}
-                  className="shrink-0 rounded-lg border border-emerald-600 px-3 py-2.5 text-sm font-medium text-emerald-400 transition hover:bg-emerald-600 hover:text-white disabled:opacity-50"
+                  className="w-full rounded-lg border border-emerald-600 px-3 py-2.5 text-sm font-medium text-emerald-400 transition hover:bg-emerald-600 hover:text-white disabled:opacity-50 sm:w-auto sm:shrink-0"
                 >
                   {sendingCode ? 'Sending…' : codeSent ? 'Sent ✓' : 'Send code'}
                 </button>

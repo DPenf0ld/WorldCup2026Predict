@@ -4,6 +4,7 @@ import League from '../models/League.js';
 import ReferralCode from '../models/ReferralCode.js';
 import { requireAdmin } from '../middleware/admin.js';
 import { scoreMatch } from '../services/scoring.js';
+import { syncFixtures } from '../services/footballData.js';
 import { KNOCKOUT_STAGES } from '../config/constants.js';
 
 const router = Router();
@@ -128,42 +129,16 @@ router.get('/leagues', async (req, res) => {
   }
 });
 
-// Stub: sync results from football-data.org
-// To activate, set API_FOOTBALL_KEY in .env and uncomment the fetch logic below.
-router.post('/sync-results', async (req, res) => {
-  /*
-  const BASE = 'https://api.football-data.org/v4';
-  const headers = { 'X-Auth-Token': process.env.API_FOOTBALL_KEY };
-
-  // FIFA World Cup 2026 competition ID — verify at football-data.org/v4/competitions
-  const COMPETITION_ID = 2000;
-
-  const r = await fetch(`${BASE}/competitions/${COMPETITION_ID}/matches?status=FINISHED`, { headers });
-  const data = await r.json();
-
-  for (const fixtureData of data.matches) {
-    const { id, score, homeTeam, awayTeam } = fixtureData;
-    const homeScore = score.fullTime.home;
-    const awayScore = score.fullTime.away;
-    if (homeScore === null || awayScore === null) continue;
-
-    // Match on team names — you may want to store an externalId on Match instead
-    const match = await Match.findOne({
-      homeTeam: homeTeam.name,
-      awayTeam: awayTeam.name,
-      resultEntered: false,
-    });
-    if (!match) continue;
-
-    match.homeScore = homeScore;
-    match.awayScore = awayScore;
-    match.resultEntered = true;
-    await match.save();
-    await scoreMatch(match._id);
+// Bulk-sync all WC fixtures from football-data.org (single API call)
+router.post('/fixtures/sync', async (req, res) => {
+  try {
+    const result = await syncFixtures();
+    console.log(`[admin sync] created: ${result.created}, updated: ${result.updated}`);
+    res.json({ message: 'Sync complete', ...result });
+  } catch (err) {
+    console.error('[admin sync] Failed:', err.message);
+    res.status(502).json({ error: err.message });
   }
-  */
-
-  res.json({ message: 'Sync stub — uncomment fetch logic in admin.js to activate' });
 });
 
 export default router;

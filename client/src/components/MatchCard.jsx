@@ -48,6 +48,18 @@ function PenaltyPicker({ homeTeam, awayTeam, value, onChange, disabled }) {
   );
 }
 
+function LiveDot() {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+      </span>
+      <span className="font-semibold text-emerald-400">Live</span>
+    </span>
+  );
+}
+
 export default function MatchCard({ match }) {
   const qc = useQueryClient();
   const [home, setHome] = useState(match.userPrediction?.predictedHomeScore ?? '');
@@ -56,11 +68,17 @@ export default function MatchCard({ match }) {
     match.userPrediction?.predictedPenaltyWinner ?? null
   );
 
+  const isLive = match.status === 'IN_PLAY';
+  const isPaused = match.status === 'PAUSED';
+  const isFinished = match.status === 'FINISHED' || match.resultEntered;
+  const isPostponed = match.status === 'POSTPONED' || match.status === 'SUSPENDED' || match.status === 'CANCELLED';
+
   const isPast = match.deadlinePassed;
-  const hasResult = match.resultEntered;
   const isKnockout = KNOCKOUT_STAGES.has(match.stage);
   const predictedDraw = home !== '' && away !== '' && Number(home) === Number(away);
   const needsPenaltyPick = isKnockout && predictedDraw;
+
+  const showInputs = !isPast && !isLive && !isPaused && !isFinished;
 
   const { mutate, isPending, isSuccess } = useMutation({
     mutationFn: () =>
@@ -77,73 +95,127 @@ export default function MatchCard({ match }) {
   const dateStr = kickoff.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
   const timeStr = kickoff.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-  const canSubmit = !isPast && home !== '' && away !== '' && (!needsPenaltyPick || penaltyWinner);
+  const canSubmit = showInputs && home !== '' && away !== '' && (!needsPenaltyPick || penaltyWinner);
 
-  // Penalty winner label for results display
   const penaltyLabel = (winner) => winner === 'home' ? match.homeTeam : match.awayTeam;
 
+  // Current/final scores for display
+  const liveHome = match.fullTimeScore?.home ?? 0;
+  const liveAway = match.fullTimeScore?.away ?? 0;
+  const htHome = match.halfTimeScore?.home;
+  const htAway = match.halfTimeScore?.away;
+  const showHalfTime = (isLive || isPaused || isFinished) && htHome !== null && htHome !== undefined;
+
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 transition hover:border-slate-600">
+    <div className={`rounded-xl border bg-slate-800 p-4 transition hover:border-slate-600 ${
+      isLive ? 'border-emerald-700/60' : 'border-slate-700'
+    }`}>
+      {/* Top meta row */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-y-1 text-xs text-slate-400">
-        <span>{dateStr} · {timeStr}</span>
+        <div className="flex flex-col gap-0.5">
+          <span>{dateStr} · {timeStr}</span>
+          {match.venue && (
+            <span className="text-slate-500">{match.venue}</span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {match.group && <span className="rounded bg-slate-700 px-1.5 py-0.5">Group {match.group}</span>}
           {isKnockout && !match.group && (
             <span className="rounded bg-slate-700 px-1.5 py-0.5 text-slate-400">No draws</span>
           )}
-          {!isPast && !hasResult && (
+
+          {isLive && <LiveDot />}
+          {isPaused && (
+            <span className="rounded bg-amber-900/40 px-2 py-0.5 text-amber-400">Half Time</span>
+          )}
+          {isFinished && (
+            <span className="rounded bg-emerald-900/40 px-2 py-0.5 text-emerald-400">Full Time</span>
+          )}
+          {isPostponed && (
+            <span className="rounded bg-slate-700 px-2 py-0.5 text-slate-400 capitalize">
+              {match.status?.toLowerCase() ?? 'postponed'}
+            </span>
+          )}
+          {!isPast && !isLive && !isPaused && !isFinished && !isPostponed && (
             <CountdownTimer deadline={match.predictionDeadline} />
           )}
-          {isPast && !hasResult && (
+          {isPast && !isLive && !isPaused && !isFinished && !isPostponed && (
             <span className="rounded bg-red-900/40 px-2 py-0.5 text-red-400">Locked</span>
-          )}
-          {hasResult && (
-            <span className="rounded bg-emerald-900/40 px-2 py-0.5 text-emerald-400">Result in</span>
           )}
         </div>
       </div>
 
+      {/* Teams + score row */}
       <div className="flex items-center gap-2 sm:gap-4">
         <span className="flex-1 text-right text-sm font-semibold">{match.homeTeam}</span>
 
         <div className="flex items-center gap-2">
-          {hasResult ? (
+          {/* Live / paused — show current score */}
+          {(isLive || isPaused) && (
+            <div className={`flex items-center gap-1 text-2xl font-bold ${isLive ? 'text-emerald-400' : 'text-white'}`}>
+              <span>{liveHome}</span>
+              <span className="text-slate-500">–</span>
+              <span>{liveAway}</span>
+            </div>
+          )}
+
+          {/* Finished — show final score */}
+          {isFinished && (
             <div className="flex items-center gap-1 text-xl font-bold">
               <span>{match.homeScore}</span>
               <span className="text-slate-500">–</span>
               <span>{match.awayScore}</span>
             </div>
-          ) : (
+          )}
+
+          {/* Scheduled / open for prediction */}
+          {showInputs && (
             <>
-              <ScoreInput value={home} onChange={(v) => { setHome(v); if (!predictedDraw) setPenaltyWinner(null); }} disabled={isPast} />
+              <ScoreInput value={home} onChange={(v) => { setHome(v); if (!predictedDraw) setPenaltyWinner(null); }} disabled={false} />
               <span className="text-slate-500">–</span>
-              <ScoreInput value={away} onChange={(v) => { setAway(v); if (!predictedDraw) setPenaltyWinner(null); }} disabled={isPast} />
+              <ScoreInput value={away} onChange={(v) => { setAway(v); if (!predictedDraw) setPenaltyWinner(null); }} disabled={false} />
             </>
+          )}
+
+          {/* Past + locked (no result yet, no live status) */}
+          {isPast && !isLive && !isPaused && !isFinished && !isPostponed && (
+            <div className="flex items-center gap-1 text-lg text-slate-500">
+              <span>{match.userPrediction?.predictedHomeScore ?? '–'}</span>
+              <span>–</span>
+              <span>{match.userPrediction?.predictedAwayScore ?? '–'}</span>
+            </div>
           )}
         </div>
 
         <span className="flex-1 text-left text-sm font-semibold">{match.awayTeam}</span>
       </div>
 
+      {/* Half-time score line */}
+      {showHalfTime && (
+        <p className="mt-1.5 text-center text-xs text-slate-500">
+          HT: {htHome}–{htAway}
+        </p>
+      )}
+
       {/* Penalty winner info on result */}
-      {hasResult && match.penaltyWinner && (
-        <p className="mt-2 text-center text-xs text-amber-400">
+      {isFinished && match.penaltyWinner && (
+        <p className="mt-1.5 text-center text-xs text-amber-400">
           {penaltyLabel(match.penaltyWinner)} win on penalties
         </p>
       )}
 
       {/* Penalty picker for predictions */}
-      {!isPast && !hasResult && needsPenaltyPick && (
+      {showInputs && needsPenaltyPick && (
         <PenaltyPicker
           homeTeam={match.homeTeam}
           awayTeam={match.awayTeam}
           value={penaltyWinner}
           onChange={setPenaltyWinner}
-          disabled={isPast}
+          disabled={false}
         />
       )}
 
-      {!isPast && !hasResult && (
+      {showInputs && (
         <div className="mt-3 flex justify-center">
           <button
             onClick={() => mutate()}
@@ -155,7 +227,8 @@ export default function MatchCard({ match }) {
         </div>
       )}
 
-      {match.userPrediction && hasResult && (
+      {/* User prediction summary after result */}
+      {match.userPrediction && isFinished && (
         <div className="mt-2 text-center text-sm">
           <span className="text-slate-400">
             Your prediction:{' '}
