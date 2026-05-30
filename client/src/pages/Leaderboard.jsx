@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -164,6 +165,7 @@ function JoinLeague({ onJoined }) {
 export default function Leaderboard() {
   const { user, refreshUser } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const leagues = user?.leagues ?? [];
   const [selectedLeague, setSelectedLeague] = useState(leagues[0]?._id ?? leagues[0] ?? '');
 
@@ -219,9 +221,10 @@ export default function Leaderboard() {
 
       {data && (
         <>
-          <p className="mb-4 text-sm text-slate-400">
+          <p className="mb-2 text-sm text-slate-400">
             {data.league.name} · {data.leaderboard.length} member{data.leaderboard.length !== 1 ? 's' : ''}
           </p>
+          <p className="mb-4 text-xs text-slate-500">Tap a player's name to see their picks</p>
           <div className="overflow-x-auto rounded-xl border border-slate-700">
             <table className="w-full text-sm">
               <thead>
@@ -245,13 +248,19 @@ export default function Leaderboard() {
                       <td className="px-4 py-3 text-slate-400">
                         {MEDAL[entry.rank - 1] ?? entry.rank}
                       </td>
-                      <td className="px-4 py-3 font-medium text-white">
-                        {entry.name}
-                        {isMe && (
-                          <span className="ml-2 rounded bg-emerald-900/50 px-1.5 py-0.5 text-xs text-emerald-400">
-                            you
-                          </span>
-                        )}
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => navigate(`/leaderboard/user/${entry.userId}`)}
+                          className="group flex items-center gap-1.5 text-left font-medium text-emerald-400 underline underline-offset-2 decoration-emerald-400/40 hover:decoration-emerald-400 transition"
+                        >
+                          {entry.name}
+                          {isMe && (
+                            <span className="rounded bg-emerald-900/50 px-1.5 py-0.5 text-xs text-emerald-400 no-underline">
+                              you
+                            </span>
+                          )}
+                          <span className="text-slate-500 group-hover:text-slate-300 transition text-xs">→</span>
+                        </button>
                       </td>
                       <td className="hidden sm:table-cell px-4 py-3 text-right text-slate-300">{entry.predictionsScored}</td>
                       <td className="px-4 py-3 text-right font-bold text-white">{entry.totalPoints}</td>

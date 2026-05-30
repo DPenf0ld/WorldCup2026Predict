@@ -5,6 +5,9 @@ import jwt from 'jsonwebtoken';
 import { connect, disconnect, clearAll } from '../helpers/db.js';
 import { createApp } from '../helpers/createApp.js';
 import Match from '../../models/Match.js';
+import Prediction from '../../models/Prediction.js';
+import User from '../../models/User.js';
+import League from '../../models/League.js';
 
 vi.mock('../../middleware/rateLimiter.js', () => ({
   authLimiter: (_req, _res, next) => next(),
@@ -246,7 +249,7 @@ describe('GET /api/predictions/mine', () => {
     expect(res.body.predictions).toEqual([]);
   });
 
-  it("returns only the authenticated user's predictions", async () => {
+  it("returns only the authenticated user's own predictions", async () => {
     const userId = new mongoose.Types.ObjectId().toString();
     const token = makeToken(userId);
     const match = await makeGroupMatch();
@@ -267,5 +270,214 @@ describe('GET /api/predictions/mine', () => {
     expect(res.status).toBe(200);
     expect(res.body.predictions).toHaveLength(1);
     expect(res.body.predictions[0].predictedHomeScore).toBe(2);
+  });
+});
+
+// ── GET /api/predictions/user/:userId ────────────────────────────────────────
+
+describe('GET /api/predictions/user/:userId', () => {
+  async function makeUser(name) {
+    return User.create({
+      name,
+      email: `${name.toLowerCase().replace(/\s+/g, '.')}@test.com`,
+      passwordHash: 'hash',
+      emailVerified: true,
+    });
+  }
+
+  async function makeLeague(memberIds) {
+    return League.create({ name: 'Test League', members: memberIds });
+  }
+
+  async function makeCompletedMatch() {
+    return Match.create({
+      homeTeam: 'England',
+      awayTeam: 'France',
+      stage: 'GROUP',
+      kickoffTime: new Date(Date.now() - 90 * 60 * 1000),
+      predictionDeadline: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      resultEntered: true,
+      homeScore: 2,
+      awayScore: 1,
+    });
+  }
+
+  async function makePendingMatch() {
+    return Match.create({
+      homeTeam: 'Spain',
+      awayTeam: 'Germany',
+      stage: 'GROUP',
+      kickoffTime: new Date(Date.now() + 50 * 60 * 60 * 1000),
+      predictionDeadline: new Date(Date.now() - 60 * 1000),
+      resultEntered: false,
+    });
+  }
+
+  it('returns 401 without a token', async () => {
+    const target = await makeUser('Alice');
+    const res = await request(app).get(`${PRED}/user/${target._id}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 403 when requester and target share no league', async () => {
+    const requester = await makeUser('Bob');
+    const target = await makeUser('Alice');
+    const token = makeToken(requester._id.toString());
+
+    const res = await request(app)
+      .get(`${PRED}/user/${target._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toMatch(/share a league/i);
+  });
+
+  it('returns 200 with the target user name and empty array when they have no completed predictions', async () => {
+    const requester = await makeUser('Bob');
+    const target = await makeUser('Alice');
+    await makeLeague([requester._id, target._id]);
+    const token = makeToken(requester._id.toString());
+
+    const res = await request(app)
+      .get(`${PRED}/user/${target._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.name).toBe('Alice');
+    expect(res.body.predictions).toEqual([]);
+  });
+
+  it('returns only predictions for matches where resultEntered is true', async () => {
+    const requester = await makeUser('Bob');
+    const target = await makeUser('Alice');
+    await makeLeague([requester._id, target._id]);
+    const token = makeToken(requester._id.toString());
+
+    const completedMatch = await makeCompletedMatch();
+    const pendingMatch = await makePendingMatch();
+
+    await Prediction.create({
+      userId: target._id,
+      matchId: completedMatch._id,
+      predictedHomeScore: 2,
+      predictedAwayScore: 1,
+      pointsAwarded: 3,
+    });
+    await Prediction.create({
+      userId: target._id,
+      matchId: pendingMatch._id,
+      predictedHomeScore: 1,
+      predictedAwayScore: 0,
+      pointsAwarded: null,
+    });
+
+    const res = await request(app)
+      .get(`${PRED}/user/${target._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.predictions).toHaveLength(1);
+    expect(res.body.predictions[0].predictedHomeScore).toBe(2);
+    expect(res.body.predictions[0].matchId.resultEntered).toBe(true);
+  });
+
+  it('includes match details and pointsAwarded in each prediction', async () => {
+    const requester = await makeUser('Bob');
+    const target = await makeUser('Alice');
+    await makeLeague([requester._id, target._id]);
+    const token = makeToken(requester._id.toString());
+
+    const completedMatch = await makeCompletedMatch();
+    await Prediction.create({
+      userId: target._id,
+      matchId: completedMatch._id,
+      predictedHomeScore: 2,
+      predictedAwayScore: 1,
+      pointsAwarded: 3,
+    });
+
+    const res = await request(app)
+      .get(`${PRED}/user/${target._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    const pred = res.body.predictions[0];
+    expect(pred.pointsAwarded).toBe(3);
+    expect(pred.matchId.homeTeam).toBe('England');
+    expect(pred.matchId.awayTeam).toBe('France');
+    expect(pred.matchId.homeScore).toBe(2);
+    expect(pred.matchId.awayScore).toBe(1);
+  });
+
+  it('does not include another user\'s predictions in the response', async () => {
+    const requester = await makeUser('Bob');
+    const target = await makeUser('Alice');
+    const stranger = await makeUser('Eve');
+    await makeLeague([requester._id, target._id]);
+    const token = makeToken(requester._id.toString());
+
+    const completedMatch = await makeCompletedMatch();
+
+    await Prediction.create({
+      userId: target._id,
+      matchId: completedMatch._id,
+      predictedHomeScore: 2,
+      predictedAwayScore: 1,
+      pointsAwarded: 3,
+    });
+    await Prediction.create({
+      userId: stranger._id,
+      matchId: completedMatch._id,
+      predictedHomeScore: 0,
+      predictedAwayScore: 0,
+      pointsAwarded: 0,
+    });
+
+    const res = await request(app)
+      .get(`${PRED}/user/${target._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.predictions).toHaveLength(1);
+    expect(res.body.predictions[0].predictedHomeScore).toBe(2);
+  });
+
+  it('allows a user to view their own predictions via this endpoint', async () => {
+    const user = await makeUser('Self');
+    const other = await makeUser('Other');
+    await makeLeague([user._id, other._id]);
+    const token = makeToken(user._id.toString());
+
+    const completedMatch = await makeCompletedMatch();
+    await Prediction.create({
+      userId: user._id,
+      matchId: completedMatch._id,
+      predictedHomeScore: 1,
+      predictedAwayScore: 1,
+      pointsAwarded: 1,
+    });
+
+    const res = await request(app)
+      .get(`${PRED}/user/${user._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.predictions).toHaveLength(1);
+    expect(res.body.user.name).toBe('Self');
+  });
+
+  it('returns 403 when requester is in a league but target is not in the same one', async () => {
+    const requester = await makeUser('Bob');
+    const target = await makeUser('Alice');
+    const unrelated = await makeUser('Charlie');
+    // requester and Charlie share a league, but not target
+    await makeLeague([requester._id, unrelated._id]);
+    const token = makeToken(requester._id.toString());
+
+    const res = await request(app)
+      .get(`${PRED}/user/${target._id}`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(403);
   });
 });

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import Match from '../models/Match.js';
 import Prediction from '../models/Prediction.js';
+import League from '../models/League.js';
+import User from '../models/User.js';
 import { authenticate } from '../middleware/auth.js';
 import { KNOCKOUT_STAGES } from '../config/constants.js';
 
@@ -70,6 +72,38 @@ router.get('/mine', authenticate, async (req, res) => {
     res.json({ predictions });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch predictions' });
+  }
+});
+
+router.get('/user/:userId', authenticate, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const sharedLeague = await League.findOne({
+      members: { $all: [req.user.id, userId] },
+    });
+    if (!sharedLeague) {
+      return res.status(403).json({ error: 'You do not share a league with this user' });
+    }
+
+    const targetUser = await User.findById(userId).select('name').lean();
+    if (!targetUser) return res.status(404).json({ error: 'User not found' });
+
+    const predictions = await Prediction.find({ userId })
+      .populate({
+        path: 'matchId',
+        match: { resultEntered: true },
+        select: 'homeTeam awayTeam stage kickoffTime homeScore awayScore penaltyWinner resultEntered',
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const scored = predictions.filter((p) => p.matchId !== null);
+
+    res.json({ user: targetUser, predictions: scored });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch user predictions' });
   }
 });
 

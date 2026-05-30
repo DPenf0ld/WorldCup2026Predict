@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import Fixtures from './pages/Fixtures';
 import Leaderboard from './pages/Leaderboard';
 import MyPredictions from './pages/MyPredictions';
+import UserPredictions from './pages/UserPredictions';
 import Admin from './pages/Admin';
 import Rules from './pages/Rules';
 import Support from './pages/Support';
@@ -63,6 +64,16 @@ export default function App() {
                 <ProtectedRoute>
                   <Layout>
                     <MyPredictions />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leaderboard/user/:userId"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <UserPredictions />
                   </Layout>
                 </ProtectedRoute>
               }
