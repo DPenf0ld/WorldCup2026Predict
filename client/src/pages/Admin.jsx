@@ -88,6 +88,9 @@ function ResultsTab({ secret }) {
   const [saving, setSaving] = useState({});
   const [saved, setSaved] = useState({});
   const [errors, setErrors] = useState({});
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
+  const [syncError, setSyncError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -115,6 +118,21 @@ function ResultsTab({ secret }) {
   }, [secret, stageFilter]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    setSyncError('');
+    try {
+      const { data } = await adminApi(secret).post('/admin/fixtures/sync');
+      setSyncResult({ created: data.created, updated: data.updated });
+      await load();
+    } catch (err) {
+      setSyncError(err.response?.data?.error || 'Sync failed');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const setScore = (id, field, val) => {
     const n = Math.max(0, parseInt(val, 10) || 0);
@@ -155,18 +173,35 @@ function ResultsTab({ secret }) {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-white">Enter Results</h2>
-        <select
-          value={stageFilter}
-          onChange={(e) => setStageFilter(e.target.value)}
-          className="rounded-lg border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
-        >
-          <option value="">All stages</option>
-          {STAGE_ORDER.map((s) => (
-            <option key={s} value={s}>{STAGE_LABELS[s]}</option>
-          ))}
-        </select>
+        <div className="flex flex-wrap items-center gap-2">
+          {syncResult && (
+            <span className="text-xs text-emerald-400">
+              Synced — {syncResult.created} created, {syncResult.updated} updated
+            </span>
+          )}
+          {syncError && (
+            <span className="text-xs text-red-400">{syncError}</span>
+          )}
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="rounded-lg border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-600 disabled:opacity-50"
+          >
+            {syncing ? 'Syncing…' : 'Sync Fixtures'}
+          </button>
+          <select
+            value={stageFilter}
+            onChange={(e) => setStageFilter(e.target.value)}
+            className="rounded-lg border border-slate-600 bg-slate-700 px-3 py-1.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+          >
+            <option value="">All stages</option>
+            {STAGE_ORDER.map((s) => (
+              <option key={s} value={s}>{STAGE_LABELS[s]}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loading && (
