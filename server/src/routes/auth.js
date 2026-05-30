@@ -36,11 +36,15 @@ function signRefresh(user) {
   );
 }
 
+const isProd = process.env.NODE_ENV === 'production';
+
 function setRefreshCookie(res, token) {
   res.cookie('refreshToken', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    // cross-site in prod (different Railway domains) needs SameSite=None+Secure;
+    // lax is enough for same-site dev (localhost ports share the same site)
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: REFRESH_COOKIE_MAX_AGE,
     path: '/api/auth/refresh',
   });
@@ -348,7 +352,8 @@ router.post('/refresh', async (req, res) => {
 router.post('/logout', (req, res) => {
   res.clearCookie('refreshToken', {
     httpOnly: true,
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     path: '/api/auth/refresh',
   });
   res.json({ message: 'Logged out' });
