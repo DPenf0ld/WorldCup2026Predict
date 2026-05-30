@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api, { setAccessToken } from '../api/axios';
+import api, { setAccessToken, getAccessToken } from '../api/axios';
 
 const AuthContext = createContext(null);
 
@@ -27,8 +27,13 @@ export function AuthProvider({ children }) {
       })
       .then(({ data }) => setUser(data.user))
       .catch(() => {
-        setAccessToken(null);
-        setUser(null);
+        // Guard against the race where login() completes and sets a token
+        // while this refresh is still in-flight. If a token is already present,
+        // login() won the race — don't wipe its state.
+        if (!getAccessToken()) {
+          setAccessToken(null);
+          setUser(null);
+        }
       })
       .finally(() => setIsLoading(false));
   }, []);

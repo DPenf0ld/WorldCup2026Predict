@@ -41,12 +41,15 @@ export default function Fixtures() {
     queryFn: () =>
       api.get('/matches', { params: stageFilter ? { stage: stageFilter } : {} }).then((r) => r.data),
     staleTime: 30_000,
-    // Poll every 60 s while any visible match is live; stop when none are
-    refetchInterval: data?.matches?.some(
-      (m) => m.status === 'IN_PLAY' || m.status === 'PAUSED'
-    )
-      ? 60_000
-      : false,
+    // Poll every 60 s while any visible match is live; stop when none are.
+    // Must be a function so React Query passes its own internal data — referencing
+    // the component's `data` binding here would be a TDZ violation in the bundle.
+    refetchInterval: (query) =>
+      query.state.data?.matches?.some(
+        (m) => m.status === 'IN_PLAY' || m.status === 'PAUSED'
+      )
+        ? 60_000
+        : false,
   });
 
   const grouped = data ? groupByStageAndDate(data.matches) : {};
