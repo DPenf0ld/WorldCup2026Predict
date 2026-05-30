@@ -5,24 +5,95 @@ import { useAuth } from '../context/AuthContext';
 
 const MEDAL = ['🥇', '🥈', '🥉'];
 
+function fmt(amount) {
+  return `£${amount.toFixed(2)}`;
+}
+
+function computePot(entryFee, paidCount) {
+  const total = entryFee * paidCount;
+  const dev = Math.round(total * 0.05 * 100) / 100;
+  const prize = Math.round((total - dev) * 100) / 100;
+  return {
+    total,
+    dev,
+    first: Math.round(prize * 0.60 * 100) / 100,
+    second: Math.round(prize * 0.25 * 100) / 100,
+    third: Math.round(prize * 0.15 * 100) / 100,
+  };
+}
+
+function PrizePot({ entryFee, paidMemberCount, totalMemberCount }) {
+  if (!entryFee) return null;
+  const pot = computePot(entryFee, paidMemberCount);
+
+  return (
+    <div className="mt-6 rounded-xl border border-amber-800/50 bg-amber-950/20 p-5">
+      <h2 className="mb-4 text-base font-semibold text-amber-300">Prize Pot</h2>
+
+      <div className="mb-4 grid grid-cols-2 gap-y-2 text-sm">
+        <span className="text-slate-400">Entry fee</span>
+        <span className="text-right font-medium text-white">£{entryFee} per person</span>
+        <span className="text-slate-400">Paid members</span>
+        <span className="text-right font-medium text-white">
+          {paidMemberCount} of {totalMemberCount}
+        </span>
+        <span className="font-medium text-slate-300">Total pot</span>
+        <span className="text-right font-bold text-amber-300">{fmt(pot.total)}</span>
+      </div>
+
+      <div className="space-y-2 border-t border-slate-700 pt-3">
+        {[
+          ['🥇', '1st place', pot.first, '60%'],
+          ['🥈', '2nd place', pot.second, '25%'],
+          ['🥉', '3rd place', pot.third, '15%'],
+        ].map(([medal, label, amount, pct]) => (
+          <div key={label} className="flex items-center justify-between text-sm">
+            <span className="text-slate-300">
+              {medal} {label}{' '}
+              <span className="text-xs text-slate-500">({pct})</span>
+            </span>
+            <span className="font-bold text-white">{fmt(amount)}</span>
+          </div>
+        ))}
+        <div className="flex items-center justify-between border-t border-slate-700/50 pt-2 text-xs text-slate-500">
+          <span>5% development contribution</span>
+          <span>{fmt(pot.dev)}</span>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-lg bg-slate-800/80 px-3 py-2.5 text-xs leading-relaxed text-slate-400">
+        Entry fees are collected directly by the league organiser — this app does not process payments.
+      </div>
+    </div>
+  );
+}
+
 function JoinLeague({ onJoined }) {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [joinedFee, setJoinedFee] = useState(null); // non-null after joining a paid league
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setJoinedFee(null);
     setLoading(true);
     try {
       const { data } = await api.post('/leagues/join', { referralCode: code });
-      setSuccess(data.message);
       setCode('');
       onJoined(data.user);
-      setTimeout(() => { setSuccess(''); setOpen(false); }, 2000);
+      const fee = data.league?.entryFee ?? 0;
+      if (fee > 0) {
+        setSuccess(data.message);
+        setJoinedFee(fee);
+      } else {
+        setSuccess(data.message);
+        setTimeout(() => { setSuccess(''); setOpen(false); }, 2000);
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to join league');
     } finally {
@@ -33,7 +104,7 @@ function JoinLeague({ onJoined }) {
   return (
     <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800/50">
       <button
-        onClick={() => { setOpen((o) => !o); setError(''); setSuccess(''); }}
+        onClick={() => { setOpen((o) => !o); setError(''); setSuccess(''); setJoinedFee(null); }}
         className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-slate-300 hover:text-white"
       >
         <span>＋ Join another league</span>
@@ -41,30 +112,50 @@ function JoinLeague({ onJoined }) {
       </button>
 
       {open && (
-        <form onSubmit={handleSubmit} className="border-t border-slate-700 px-4 pb-4 pt-3">
-          <p className="mb-3 text-xs text-slate-400">
-            Enter a referral code from a league you want to join.
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              required
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="REFERRAL CODE"
-              className="flex-1 rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 font-mono uppercase tracking-widest text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
-            >
-              {loading ? '…' : 'Join'}
-            </button>
-          </div>
-          {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
-          {success && <p className="mt-2 text-sm text-emerald-400">✓ {success}</p>}
-        </form>
+        <div className="border-t border-slate-700 px-4 pb-4 pt-3">
+          {joinedFee ? (
+            <div className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-4">
+              <p className="mb-1 text-sm font-semibold text-amber-300">✓ {success}</p>
+              <p className="text-sm text-slate-300 leading-relaxed">
+                This league has an entry fee of{' '}
+                <span className="font-semibold text-white">£{joinedFee}</span>. Please send
+                your entry fee directly to the league organiser via bank transfer or PayPal.
+                Your entry is not confirmed until the organiser marks you as paid.
+              </p>
+              <button
+                onClick={() => { setJoinedFee(null); setSuccess(''); setOpen(false); }}
+                className="mt-3 rounded-md bg-amber-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600"
+              >
+                Got it
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <p className="mb-3 text-xs text-slate-400">
+                Enter a referral code from a league you want to join.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  placeholder="REFERRAL CODE"
+                  className="flex-1 rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 font-mono uppercase tracking-widest text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+                >
+                  {loading ? '…' : 'Join'}
+                </button>
+              </div>
+              {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+              {success && !joinedFee && <p className="mt-2 text-sm text-emerald-400">✓ {success}</p>}
+            </form>
+          )}
+        </div>
       )}
     </div>
   );
@@ -129,7 +220,7 @@ export default function Leaderboard() {
       {data && (
         <>
           <p className="mb-4 text-sm text-slate-400">
-            {data.league.name} · {data.leaderboard.length} members
+            {data.league.name} · {data.leaderboard.length} member{data.leaderboard.length !== 1 ? 's' : ''}
           </p>
           <div className="overflow-x-auto rounded-xl border border-slate-700">
             <table className="w-full text-sm">
@@ -170,6 +261,12 @@ export default function Leaderboard() {
               </tbody>
             </table>
           </div>
+
+          <PrizePot
+            entryFee={data.league.entryFee}
+            paidMemberCount={data.league.paidMemberCount}
+            totalMemberCount={data.league.totalMemberCount}
+          />
         </>
       )}
 

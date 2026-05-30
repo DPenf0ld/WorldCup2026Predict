@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import Match from '../models/Match.js';
-import League from '../models/League.js';
+import League, { VALID_ENTRY_FEES } from '../models/League.js';
 import ReferralCode from '../models/ReferralCode.js';
 import { requireAdmin } from '../middleware/admin.js';
 import { scoreMatch } from '../services/scoring.js';
@@ -97,35 +97,77 @@ router.post('/referral-codes', async (req, res) => {
 // Create a new league
 router.post('/leagues', async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, entryFee = 0 } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'name is required' });
     if (name.length > 100) return res.status(400).json({ error: 'League name must be 100 characters or fewer' });
-    const league = await League.create({ name: name.trim(), referralCodes: [], members: [] });
-    res.status(201).json({ league: { id: league._id, name: league.name, memberCount: 0, referralCodes: [] } });
+    if (!VALID_ENTRY_FEES.includes(Number(entryFee))) {
+      return res.status(400).json({ error: `entryFee must be one of: ${VALID_ENTRY_FEES.join(', ')}` });
+    }
+    const league = await League.create({ name: name.trim(), entryFee: Number(entryFee), referralCodes: [], members: [], paidMembers: [] });
+    res.status(201).json({ league: { id: league._id, name: league.name, entryFee: league.entryFee, memberCount: 0, referralCodes: [] } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create league' });
   }
 });
 
-// List all leagues with member counts
+// List all leagues with member counts and paid status
 router.get('/leagues', async (req, res) => {
   try {
     const leagues = await League.find()
       .populate('referralCodes', 'code maxUses usedCount')
+      .populate('members', 'name')
       .lean();
 
-    const result = leagues.map((l) => ({
-      id: l._id,
-      name: l.name,
-      memberCount: l.members.length,
-      referralCodes: l.referralCodes,
-      createdAt: l.createdAt,
-    }));
+    const result = leagues.map((l) => {
+      const paidSet = new Set((l.paidMembers ?? []).map((id) => id.toString()));
+      const members = (l.members ?? []).map((m) => ({
+        id: m._id.toString(),
+        name: m.name,
+        paid: paidSet.has(m._id.toString()),
+      }));
+      return {
+        id: l._id,
+        name: l.name,
+        entryFee: l.entryFee ?? 0,
+        memberCount: members.length,
+        paidMemberCount: paidSet.size,
+        members,
+        referralCodes: l.referralCodes,
+        createdAt: l.createdAt,
+      };
+    });
 
     res.json({ leagues: result });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch leagues' });
+  }
+});
+
+// Toggle a member's paid status within a league
+router.patch('/leagues/:id/members/:userId/paid', async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+    const { paid } = req.body;
+    if (typeof paid !== 'boolean') {
+      return res.status(400).json({ error: 'paid must be a boolean' });
+    }
+
+    const league = await League.findById(id);
+    if (!league) return res.status(404).json({ error: 'League not found' });
+
+    const isMember = league.members.some((m) => m.toString() === userId);
+    if (!isMember) return res.status(404).json({ error: 'Member not found in this league' });
+
+    const update = paid
+      ? { $addToSet: { paidMembers: userId } }
+      : { $pull: { paidMembers: userId } };
+
+    await League.findByIdAndUpdate(id, update);
+    res.json({ message: `Member marked as ${paid ? 'paid' : 'unpaid'}` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update payment status' });
   }
 });
 

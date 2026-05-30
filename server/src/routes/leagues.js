@@ -30,7 +30,7 @@ router.post('/join', authenticate, async (req, res) => {
     user.leagues.push(code.leagueId);
     await user.save();
 
-    const league = await League.findById(code.leagueId).select('name').lean();
+    const league = await League.findById(code.leagueId).select('name entryFee').lean();
 
     const updatedUser = await User.findById(user._id)
       .select('-passwordHash')

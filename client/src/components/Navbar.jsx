@@ -7,6 +7,7 @@ const links = [
   { to: '/leaderboard', label: 'Leaderboard' },
   { to: '/predictions', label: 'My Predictions' },
   { to: '/rules', label: 'Rules' },
+  { to: '/support', label: 'Support' },
 ];
 
 export default function Navbar() {

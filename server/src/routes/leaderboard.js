@@ -55,7 +55,16 @@ router.get('/', authenticate, async (req, res) => {
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .map((entry, index) => ({ rank: index + 1, ...entry }));
 
-    res.json({ league: { id: league._id, name: league.name }, leaderboard });
+    res.json({
+      league: {
+        id: league._id,
+        name: league.name,
+        entryFee: league.entryFee ?? 0,
+        paidMemberCount: league.paidMembers?.length ?? 0,
+        totalMemberCount: league.members.length,
+      },
+      leaderboard,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });

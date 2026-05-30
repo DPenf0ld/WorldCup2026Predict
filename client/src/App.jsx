@@ -10,6 +10,7 @@ import Leaderboard from './pages/Leaderboard';
 import MyPredictions from './pages/MyPredictions';
 import Admin from './pages/Admin';
 import Rules from './pages/Rules';
+import Support from './pages/Support';
 import ForgotPassword from './pages/ForgotPassword';
 
 const queryClient = new QueryClient({
@@ -72,6 +73,16 @@ export default function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Rules />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/support"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Support />
                   </Layout>
                 </ProtectedRoute>
               }

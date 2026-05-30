@@ -317,6 +317,14 @@ function ResultsTab({ secret }) {
   );
 }
 
+const ENTRY_FEE_OPTIONS = [
+  { value: 0, label: 'Free' },
+  { value: 5, label: '£5' },
+  { value: 10, label: '£10' },
+  { value: 20, label: '£20' },
+  { value: 50, label: '£50' },
+];
+
 // ---------------------------------------------------------------------------
 // Leagues tab
 // ---------------------------------------------------------------------------
@@ -324,8 +332,11 @@ function LeaguesTab({ secret }) {
   const [leagues, setLeagues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
+  const [newEntryFee, setNewEntryFee] = useState(0);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [expanded, setExpanded] = useState({});
+  const [togglingPaid, setTogglingPaid] = useState({});
 
   const loadLeagues = useCallback(async () => {
     const { data } = await adminApi(secret).get('/admin/leagues');
@@ -341,13 +352,29 @@ function LeaguesTab({ secret }) {
     setCreateError('');
     setCreating(true);
     try {
-      await adminApi(secret).post('/admin/leagues', { name: newName });
+      await adminApi(secret).post('/admin/leagues', { name: newName, entryFee: newEntryFee });
       setNewName('');
+      setNewEntryFee(0);
       await loadLeagues();
     } catch (err) {
       setCreateError(err.response?.data?.error || 'Failed to create league');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const togglePaid = async (leagueId, userId, currentPaid) => {
+    const key = `${leagueId}-${userId}`;
+    setTogglingPaid((prev) => ({ ...prev, [key]: true }));
+    try {
+      await adminApi(secret).patch(`/admin/leagues/${leagueId}/members/${userId}/paid`, {
+        paid: !currentPaid,
+      });
+      await loadLeagues();
+    } catch {
+      // no-op — reload will keep current state
+    } finally {
+      setTogglingPaid((prev) => ({ ...prev, [key]: false }));
     }
   };
 
@@ -363,22 +390,33 @@ function LeaguesTab({ secret }) {
     <div className="space-y-8">
       <div>
         <h2 className="mb-4 text-lg font-semibold text-white">Create League</h2>
-        <form onSubmit={handleCreate} className="flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-800 p-5 sm:flex-row">
-          <input
-            type="text"
-            required
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="League name…"
-            className="flex-1 rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
-          />
-          <button
-            type="submit"
-            disabled={creating}
-            className="rounded-lg bg-emerald-600 px-5 py-2.5 font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
-          >
-            {creating ? 'Creating…' : 'Create'}
-          </button>
+        <form onSubmit={handleCreate} className="rounded-xl border border-slate-700 bg-slate-800 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <input
+              type="text"
+              required
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="League name…"
+              className="flex-1 rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+            />
+            <select
+              value={newEntryFee}
+              onChange={(e) => setNewEntryFee(Number(e.target.value))}
+              className="rounded-lg border border-slate-600 bg-slate-700 px-3 py-2.5 text-white focus:border-emerald-500 focus:outline-none"
+            >
+              {ENTRY_FEE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label} entry</option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              disabled={creating}
+              className="rounded-lg bg-emerald-600 px-5 py-2.5 font-semibold text-white hover:bg-emerald-500 disabled:opacity-60"
+            >
+              {creating ? 'Creating…' : 'Create'}
+            </button>
+          </div>
         </form>
         {createError && <p className="mt-2 text-sm text-red-400">{createError}</p>}
       </div>
@@ -386,46 +424,111 @@ function LeaguesTab({ secret }) {
       <div>
         <h2 className="mb-4 text-lg font-semibold text-white">All Leagues</h2>
         {leagues.length === 0 && <p className="text-slate-400">No leagues yet.</p>}
-      <div className="space-y-4">
-        {leagues.map((league) => (
-          <div key={league.id} className="rounded-xl border border-slate-700 bg-slate-800 p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-semibold text-white">{league.name}</h3>
-              <span className="rounded-full bg-slate-700 px-3 py-0.5 text-sm text-slate-300">
-                {league.memberCount} member{league.memberCount !== 1 ? 's' : ''}
-              </span>
-            </div>
-            {league.referralCodes?.length > 0 && (
-              <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Referral Codes
-                </p>
-                <div className="space-y-1">
-                  {league.referralCodes.map((rc) => (
-                    <div
-                      key={rc._id}
-                      className="flex items-center justify-between rounded-lg bg-slate-700/50 px-3 py-2 text-sm"
-                    >
-                      <span className="font-mono font-semibold tracking-widest text-emerald-400">
-                        {rc.code}
-                      </span>
-                      <span className="text-slate-400">
-                        {rc.usedCount} / {rc.maxUses} uses
-                      </span>
-                      <div className="h-1.5 w-24 rounded-full bg-slate-600">
-                        <div
-                          className="h-1.5 rounded-full bg-emerald-500"
-                          style={{ width: `${Math.min(100, (rc.usedCount / rc.maxUses) * 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+        <div className="space-y-4">
+          {leagues.map((league) => {
+            const isPaid = league.entryFee > 0;
+            const isExpanded = expanded[league.id];
+            return (
+              <div key={league.id} className="rounded-xl border border-slate-700 bg-slate-800 p-5">
+                {/* Header row */}
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <h3 className="flex-1 font-semibold text-white">{league.name}</h3>
+                  {isPaid && (
+                    <span className="rounded-full bg-amber-900/40 px-2.5 py-0.5 text-xs font-semibold text-amber-400">
+                      £{league.entryFee} entry
+                    </span>
+                  )}
+                  <span className="rounded-full bg-slate-700 px-3 py-0.5 text-sm text-slate-300">
+                    {league.memberCount} member{league.memberCount !== 1 ? 's' : ''}
+                  </span>
+                  {isPaid && (
+                    <span className="rounded-full bg-emerald-900/40 px-2.5 py-0.5 text-xs text-emerald-400">
+                      {league.paidMemberCount}/{league.memberCount} paid
+                    </span>
+                  )}
                 </div>
+
+                {/* Members panel (expandable) */}
+                {league.members?.length > 0 && (
+                  <div className="mb-3">
+                    <button
+                      onClick={() => setExpanded((prev) => ({ ...prev, [league.id]: !isExpanded }))}
+                      className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500 hover:text-slate-300"
+                    >
+                      Members {isExpanded ? '▲' : '▼'}
+                    </button>
+                    {isExpanded && (
+                      <div className="space-y-1">
+                        {league.members.map((member) => {
+                          const key = `${league.id}-${member.id}`;
+                          const toggling = !!togglingPaid[key];
+                          return (
+                            <div
+                              key={member.id}
+                              className="flex items-center justify-between rounded-lg bg-slate-700/40 px-3 py-2 text-sm"
+                            >
+                              <span className="font-medium text-white">{member.name}</span>
+                              <div className="flex items-center gap-2">
+                                {!member.paid && isPaid && (
+                                  <span className="rounded bg-red-900/50 px-1.5 py-0.5 text-xs font-semibold text-red-400">
+                                    unpaid
+                                  </span>
+                                )}
+                                {isPaid && (
+                                  <button
+                                    onClick={() => togglePaid(league.id, member.id, member.paid)}
+                                    disabled={toggling}
+                                    className={`rounded px-2.5 py-1 text-xs font-semibold transition disabled:opacity-50 ${
+                                      member.paid
+                                        ? 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+                                        : 'bg-emerald-700 text-white hover:bg-emerald-600'
+                                    }`}
+                                  >
+                                    {toggling ? '…' : member.paid ? 'Mark unpaid' : 'Mark paid'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Referral codes */}
+                {league.referralCodes?.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">
+                      Referral Codes
+                    </p>
+                    <div className="space-y-1">
+                      {league.referralCodes.map((rc) => (
+                        <div
+                          key={rc._id}
+                          className="flex items-center justify-between rounded-lg bg-slate-700/50 px-3 py-2 text-sm"
+                        >
+                          <span className="font-mono font-semibold tracking-widest text-emerald-400">
+                            {rc.code}
+                          </span>
+                          <span className="text-slate-400">
+                            {rc.usedCount} / {rc.maxUses} uses
+                          </span>
+                          <div className="h-1.5 w-24 rounded-full bg-slate-600">
+                            <div
+                              className="h-1.5 rounded-full bg-emerald-500"
+                              style={{ width: `${Math.min(100, (rc.usedCount / rc.maxUses) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
