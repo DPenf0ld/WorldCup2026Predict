@@ -5,6 +5,7 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
 const MEDAL = ['🥇', '🥈', '🥉'];
+const TOURNAMENT_START = 'June 11, 2026';
 
 function fmt(amount) {
   return `£${amount.toFixed(2)}`;
@@ -21,6 +22,89 @@ function computePot(entryFee, paidCount) {
     second: Math.round(prize * 0.25 * 100) / 100,
     third: Math.round(prize * 0.15 * 100) / 100,
   };
+}
+
+function PaymentWarningBanner({ entryFee }) {
+  return (
+    <div className="mb-4 rounded-xl border border-amber-700/60 bg-amber-950/30 p-4">
+      <div className="flex items-start gap-3">
+        <span className="text-xl shrink-0">⚠️</span>
+        <div>
+          <p className="font-semibold text-amber-300 text-sm">Payment Required</p>
+          <p className="mt-1 text-sm text-amber-200/80 leading-relaxed">
+            You must pay your entry fee of{' '}
+            <span className="font-semibold text-white">£{entryFee}</span> before{' '}
+            <span className="font-semibold text-white">{TOURNAMENT_START}</span> for your
+            predictions and points to count.
+          </p>
+          <p className="mt-1 text-sm text-amber-200/70">
+            Your entry will not appear on the leaderboard until the league organiser marks you as
+            paid.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PayPalQRCard({ entryFee }) {
+  return (
+    <div className="mt-6 rounded-xl border border-blue-800/50 bg-blue-950/20 p-5">
+      <h2 className="mb-4 text-base font-semibold text-blue-300">Pay Your Entry Fee</h2>
+      <div className="flex flex-col items-center text-center">
+        <p className="mb-4 text-3xl font-bold text-white">£{entryFee}</p>
+        <div className="rounded-xl bg-white p-3">
+          <img
+            src="/paypal-qr.png"
+            alt="PayPal QR code"
+            className="h-48 w-48 object-contain"
+          />
+        </div>
+        <p className="mt-4 max-w-xs text-sm text-slate-300 leading-relaxed">
+          Scan to pay via PayPal — please include your name and league name as the payment
+          reference
+        </p>
+        <p className="mt-2 text-xs text-slate-400">
+          Once payment is received the league organiser will confirm your entry
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function MemberList({ members, currentUserId }) {
+  return (
+    <div className="mt-6">
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        All Members
+      </h2>
+      <div className="rounded-xl border border-slate-700 overflow-hidden">
+        {members.map((member) => {
+          const isMe = member.userId.toString() === currentUserId;
+          return (
+            <div
+              key={member.userId}
+              className="flex items-center justify-between border-b last:border-b-0 border-slate-700/50 px-4 py-2.5"
+            >
+              <span className={`text-sm font-medium ${isMe ? 'text-emerald-400' : 'text-white'}`}>
+                {member.name}
+                {isMe && (
+                  <span className="ml-2 rounded bg-emerald-900/50 px-1.5 py-0.5 text-xs text-emerald-400">
+                    you
+                  </span>
+                )}
+              </span>
+              {!member.paid && (
+                <span className="rounded-full bg-amber-900/40 px-2.5 py-0.5 text-xs font-semibold text-amber-400">
+                  Pending Payment
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function PrizePot({ entryFee, paidMemberCount, totalMemberCount }) {
@@ -221,61 +305,83 @@ export default function Leaderboard() {
 
       {data && (
         <>
+          {data.league.entryFee > 0 && !data.currentUserPaid && (
+            <PaymentWarningBanner entryFee={data.league.entryFee} />
+          )}
+
           <p className="mb-2 text-sm text-slate-400">
-            {data.league.name} · {data.leaderboard.length} member{data.leaderboard.length !== 1 ? 's' : ''}
+            {data.league.name} ·{' '}
+            {data.league.entryFee > 0
+              ? `${data.league.paidMemberCount} paid of ${data.league.totalMemberCount} member${data.league.totalMemberCount !== 1 ? 's' : ''}`
+              : `${data.leaderboard.length} member${data.leaderboard.length !== 1 ? 's' : ''}`}
           </p>
           <p className="mb-4 text-xs text-slate-500">Tap a player's name to see their picks</p>
-          <div className="overflow-x-auto rounded-xl border border-slate-700">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-700 bg-slate-800 text-xs uppercase tracking-wider text-slate-400">
-                  <th className="px-4 py-3 text-left">#</th>
-                  <th className="px-4 py-3 text-left">Player</th>
-                  <th className="hidden sm:table-cell px-4 py-3 text-right">Predictions</th>
-                  <th className="px-4 py-3 text-right">Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.leaderboard.map((entry) => {
-                  const isMe = entry.userId === user?.id;
-                  return (
-                    <tr
-                      key={entry.userId}
-                      className={`border-b border-slate-700/50 transition ${
-                        isMe ? 'bg-emerald-900/20' : 'hover:bg-slate-800/50'
-                      }`}
-                    >
-                      <td className="px-4 py-3 text-slate-400">
-                        {MEDAL[entry.rank - 1] ?? entry.rank}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => navigate(`/leaderboard/user/${entry.userId}`)}
-                          className="group flex items-center gap-1.5 text-left font-medium text-emerald-400 underline underline-offset-2 decoration-emerald-400/40 hover:decoration-emerald-400 transition"
-                        >
-                          {entry.name}
-                          {isMe && (
-                            <span className="rounded bg-emerald-900/50 px-1.5 py-0.5 text-xs text-emerald-400 no-underline">
-                              you
-                            </span>
-                          )}
-                          <span className="text-slate-500 group-hover:text-slate-300 transition text-xs">→</span>
-                        </button>
-                      </td>
-                      <td className="hidden sm:table-cell px-4 py-3 text-right text-slate-300">{entry.predictionsScored}</td>
-                      <td className="px-4 py-3 text-right font-bold text-white">{entry.totalPoints}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+
+          {data.leaderboard.length === 0 ? (
+            <div className="rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-8 text-center text-sm text-slate-400">
+              No paid members on the leaderboard yet.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-700">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-700 bg-slate-800 text-xs uppercase tracking-wider text-slate-400">
+                    <th className="px-4 py-3 text-left">#</th>
+                    <th className="px-4 py-3 text-left">Player</th>
+                    <th className="hidden sm:table-cell px-4 py-3 text-right">Predictions</th>
+                    <th className="px-4 py-3 text-right">Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.leaderboard.map((entry) => {
+                    const isMe = entry.userId.toString() === user?.id;
+                    return (
+                      <tr
+                        key={entry.userId}
+                        className={`border-b border-slate-700/50 transition ${
+                          isMe ? 'bg-emerald-900/20' : 'hover:bg-slate-800/50'
+                        }`}
+                      >
+                        <td className="px-4 py-3 text-slate-400">
+                          {MEDAL[entry.rank - 1] ?? entry.rank}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => navigate(`/leaderboard/user/${entry.userId}`)}
+                            className="group flex items-center gap-1.5 text-left font-medium text-emerald-400 underline underline-offset-2 decoration-emerald-400/40 hover:decoration-emerald-400 transition"
+                          >
+                            {entry.name}
+                            {isMe && (
+                              <span className="rounded bg-emerald-900/50 px-1.5 py-0.5 text-xs text-emerald-400 no-underline">
+                                you
+                              </span>
+                            )}
+                            <span className="text-slate-500 group-hover:text-slate-300 transition text-xs">→</span>
+                          </button>
+                        </td>
+                        <td className="hidden sm:table-cell px-4 py-3 text-right text-slate-300">{entry.predictionsScored}</td>
+                        <td className="px-4 py-3 text-right font-bold text-white">{entry.totalPoints}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <PrizePot
             entryFee={data.league.entryFee}
             paidMemberCount={data.league.paidMemberCount}
             totalMemberCount={data.league.totalMemberCount}
           />
+
+          {data.league.entryFee > 0 && data.allMembers?.length > 0 && (
+            <MemberList members={data.allMembers} currentUserId={user?.id} />
+          )}
+
+          {user && data.league.entryFee > 0 && !data.currentUserPaid && (
+            <PayPalQRCard entryFee={data.league.entryFee} />
+          )}
         </>
       )}
 

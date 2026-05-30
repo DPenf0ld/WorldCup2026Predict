@@ -17,10 +17,19 @@ router.get('/', authenticate, async (req, res) => {
     const isMember = league.members.some((m) => m._id.toString() === req.user.id);
     if (!isMember) return res.status(403).json({ error: 'You are not a member of this league' });
 
-    const memberIds = league.members.map((m) => m._id);
+    const paidMembersSet = new Set((league.paidMembers ?? []).map((id) => id.toString()));
+    const isPaidLeague = (league.entryFee ?? 0) > 0;
+    const currentUserPaid = !isPaidLeague || paidMembersSet.has(req.user.id);
+
+    // For paid leagues, only rank members who have paid
+    const effectiveMembers = isPaidLeague
+      ? league.members.filter((m) => paidMembersSet.has(m._id.toString()))
+      : league.members;
+
+    const effectiveMemberIds = effectiveMembers.map((m) => m._id);
 
     const pointsAgg = await Prediction.aggregate([
-      { $match: { userId: { $in: memberIds }, pointsAwarded: { $ne: null } } },
+      { $match: { userId: { $in: effectiveMemberIds }, pointsAwarded: { $ne: null } } },
       {
         $lookup: {
           from: 'matches',
@@ -42,7 +51,7 @@ router.get('/', authenticate, async (req, res) => {
 
     const pointsMap = new Map(pointsAgg.map((p) => [p._id.toString(), p]));
 
-    const leaderboard = league.members
+    const leaderboard = effectiveMembers
       .map((member) => {
         const stats = pointsMap.get(member._id.toString());
         return {
@@ -55,6 +64,13 @@ router.get('/', authenticate, async (req, res) => {
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .map((entry, index) => ({ rank: index + 1, ...entry }));
 
+    // Full member list with paid flag — for the member list visible to all
+    const allMembers = league.members.map((m) => ({
+      userId: m._id,
+      name: m.name,
+      paid: !isPaidLeague || paidMembersSet.has(m._id.toString()),
+    }));
+
     res.json({
       league: {
         id: league._id,
@@ -63,6 +79,8 @@ router.get('/', authenticate, async (req, res) => {
         paidMemberCount: league.paidMembers?.length ?? 0,
         totalMemberCount: league.members.length,
       },
+      currentUserPaid,
+      allMembers,
       leaderboard,
     });
   } catch (err) {
