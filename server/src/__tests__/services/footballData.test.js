@@ -203,7 +203,7 @@ describe('syncFixtures — finished matches and auto-scoring', () => {
       id: 2001,
       stage: 'QUARTER_FINALS',
       status: 'FINISHED',
-      score: { fullTime: { home: 1, away: 1 }, halfTime: { home: 0, away: 0 }, winner: 'AWAY_TEAM' },
+      score: { duration: 'PENALTY_SHOOTOUT', fullTime: { home: 1, away: 1 }, halfTime: { home: 0, away: 0 }, winner: 'AWAY_TEAM' },
     })]);
     await syncFixtures();
 
@@ -217,7 +217,7 @@ describe('syncFixtures — finished matches and auto-scoring', () => {
       id: 3001,
       stage: 'FINAL',
       status: 'FINISHED',
-      score: { fullTime: { home: 1, away: 1 }, halfTime: { home: 1, away: 0 }, winner: 'HOME_TEAM' },
+      score: { duration: 'PENALTY_SHOOTOUT', fullTime: { home: 1, away: 1 }, halfTime: { home: 1, away: 0 }, winner: 'HOME_TEAM' },
     })]);
     await syncFixtures();
 
@@ -261,13 +261,13 @@ describe('syncFixtures — finished matches and auto-scoring', () => {
       id: 2001,
       stage: 'QUARTER_FINALS',
       status: 'FINISHED',
-      score: { fullTime: { home: 1, away: 1 }, halfTime: { home: 0, away: 0 }, winner: 'AWAY_TEAM' },
+      score: { duration: 'PENALTY_SHOOTOUT', fullTime: { home: 1, away: 1 }, halfTime: { home: 0, away: 0 }, winner: 'AWAY_TEAM' },
     })]);
     await syncFixtures();
 
     const [u1, u2] = await Promise.all([Prediction.findById(p1._id), Prediction.findById(p2._id)]);
-    expect(u1.pointsAwarded).toBe(3);
-    expect(u2.pointsAwarded).toBe(2);
+    expect(u1.pointsAwarded).toBe(3); // exact (score + correct pen winner) + total + outcome
+    expect(u2.pointsAwarded).toBe(1); // total only — wrong pen winner means no exact and no outcome
   });
 });
 

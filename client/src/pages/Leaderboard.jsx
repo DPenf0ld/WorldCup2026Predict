@@ -51,8 +51,11 @@ function PayPalQRCard({ entryFee }) {
   return (
     <div className="mt-6 rounded-xl border border-blue-800/50 bg-blue-950/20 p-5">
       <h2 className="mb-4 text-base font-semibold text-blue-300">Pay Your Entry Fee</h2>
-      <div className="flex flex-col items-center text-center">
-        <p className="mb-4 text-3xl font-bold text-white">£{entryFee}</p>
+      <p className="mb-5 text-3xl font-bold text-white text-center">£{entryFee}</p>
+
+      {/* PayPal section */}
+      <div className="mb-5 flex flex-col items-center text-center">
+        <p className="mb-3 text-sm font-semibold text-blue-300 uppercase tracking-wider">Option 1 — PayPal</p>
         <div className="rounded-xl bg-white p-3">
           <img
             src="/paypal-qr.png"
@@ -60,14 +63,57 @@ function PayPalQRCard({ entryFee }) {
             className="h-48 w-48 object-contain"
           />
         </div>
-        <p className="mt-4 max-w-xs text-sm text-slate-300 leading-relaxed">
-          Scan to pay via PayPal — please include your name and league name as the payment
-          reference
+        <p className="mt-3 text-sm text-slate-300">
+          Scan the QR code, or pay via:{" "}
+          <a
+            href="https://paypal.me/dmpenfold"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-blue-400 underline hover:text-blue-300"
+          >
+            paypal.me/dmpenfold
+          </a>
         </p>
-        <p className="mt-2 text-xs text-slate-400">
-          Once payment is received the league organiser will confirm your entry
+        <p className="mt-1 text-xs text-amber-400 font-medium">
+          Send as <span className="underline">Friends &amp; Family</span> to avoid fees
+        </p>
+        <p className="mt-2 max-w-xs text-xs text-slate-400 leading-relaxed">
+          Include your <span className="text-white font-medium">full name and league name</span> in the payment reference
         </p>
       </div>
+
+      {/* Divider */}
+      <div className="relative my-5 flex items-center">
+        <div className="flex-grow border-t border-slate-700" />
+        <span className="mx-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">OR</span>
+        <div className="flex-grow border-t border-slate-700" />
+      </div>
+
+      {/* Bank transfer section */}
+      <div className="flex flex-col items-center text-center">
+        <p className="mb-3 text-sm font-semibold text-blue-300 uppercase tracking-wider">Option 2 — Bank Transfer</p>
+        <div className="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-5 py-4 text-sm space-y-2">
+          <div className="flex justify-between">
+            <span className="text-slate-400">Name</span>
+            <span className="font-semibold text-white">David Penfold</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Sort Code</span>
+            <span className="font-semibold text-white font-mono">30-98-29</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-400">Account No.</span>
+            <span className="font-semibold text-white font-mono">64311868</span>
+          </div>
+        </div>
+        <p className="mt-3 max-w-xs text-xs text-slate-400 leading-relaxed">
+          Include your <span className="text-white font-medium">full name and league name</span> in the payment reference
+        </p>
+      </div>
+
+      <p className="mt-5 text-center text-xs text-slate-500">
+        Once payment is received the league organiser will confirm your entry
+      </p>
     </div>
   );
 }

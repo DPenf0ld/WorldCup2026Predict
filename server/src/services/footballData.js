@@ -97,14 +97,30 @@ export async function syncFixtures() {
     // Scoring fields — only set once the match is truly finished with real scores
     const scoringFields = {};
     if (isFinished) {
-      scoringFields.homeScore = fullTime.home;
-      scoringFields.awayScore = fullTime.away;
-      scoringFields.resultEntered = true;
-      // Determine penalty winner for knockout draws
-      if (fullTime.home === fullTime.away) {
+      const duration = raw.score?.duration; // 'REGULAR', 'EXTRA_TIME', or 'PENALTY_SHOOTOUT'
+      const extraTime = raw.score?.extraTime ?? {};
+      const penalties = raw.score?.penalties ?? {};
+
+      // Use the most-advanced score as the canonical result:
+      // penalty shootout → cumulative ET score (e.g. 2-2 if ET goals were scored, 1-1 if not) + penaltyWinner
+      // extra time goal  → cumulative ET score (e.g. 2-1), no penaltyWinner
+      // regular time     → 90-min score
+      if (duration === 'PENALTY_SHOOTOUT') {
+        // extraTime is cumulative (includes 90-min goals + any ET goals), so it's the score
+        // at the moment penalties were taken — the right target for predictions.
+        scoringFields.homeScore = extraTime.home ?? fullTime.home;
+        scoringFields.awayScore = extraTime.away ?? fullTime.away;
         if (raw.score?.winner === 'HOME_TEAM') scoringFields.penaltyWinner = 'home';
         else if (raw.score?.winner === 'AWAY_TEAM') scoringFields.penaltyWinner = 'away';
+      } else if (duration === 'EXTRA_TIME' && extraTime.home != null && extraTime.away != null) {
+        scoringFields.homeScore = extraTime.home;
+        scoringFields.awayScore = extraTime.away;
+      } else {
+        scoringFields.homeScore = fullTime.home;
+        scoringFields.awayScore = fullTime.away;
       }
+
+      scoringFields.resultEntered = true;
     }
 
     const existing = await Match.findOne({ externalId: raw.id }).lean();

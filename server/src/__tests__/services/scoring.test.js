@@ -127,7 +127,7 @@ describe('scoreMatch — knockout stages (R32 through Final, all use penalty win
     expect(updated.pointsAwarded).toBe(3);
   });
 
-  it('awards 2 pts for exact draw with wrong penalty winner', async () => {
+  it('awards 1 pt for exact draw with wrong penalty winner (total only)', async () => {
     const match = await makeMatch({
       stage: 'FINAL',
       homeScore: 1,
@@ -139,7 +139,9 @@ describe('scoreMatch — knockout stages (R32 through Final, all use penalty win
     await scoreMatch(match._id);
 
     const updated = await Prediction.findById(pred._id);
-    expect(updated.pointsAwarded).toBe(2); // exact + total, but wrong outcome
+    // Wrong penalty winner → no exact score point (pen winner is part of "exact" in knockout draws)
+    // Total (1+1=1+1) → 1 pt; outcome (wrong pen winner) → 0 pts
+    expect(updated.pointsAwarded).toBe(1);
   });
 
   // Canonical example from game rules: predict 2-0, result 1-1 penalties home → 2 pts
@@ -207,8 +209,8 @@ describe('scoreMatch — R32/R16 also use penalty winner', () => {
       Prediction.findById(predWrongPen._id),
       Prediction.findById(predOutright._id),
     ]);
-    expect(uCorrect.pointsAwarded).toBe(3);  // exact + total + outcome (pen winner matches)
-    expect(uWrongPen.pointsAwarded).toBe(2); // exact + total, but wrong outcome
+    expect(uCorrect.pointsAwarded).toBe(3);  // exact (score + correct pen winner) + total + outcome
+    expect(uWrongPen.pointsAwarded).toBe(1); // total only — wrong pen winner means no exact and no outcome
     expect(uOutright.pointsAwarded).toBe(2); // total (2=2) + outcome (home wins), no exact
   });
 });

@@ -67,9 +67,10 @@ export default function Rules() {
             </p>
             <div className="rounded-lg bg-slate-700/40 px-4 py-3 text-xs text-slate-400 space-y-2">
               <p className="font-semibold text-slate-300">How the outcome point works in knockouts:</p>
-              <p>→ Your predicted winner is whoever wins overall — either by scoring more goals, or by winning on penalties if you predicted a draw score.</p>
+              <p>→ Your predicted winner is whoever wins overall — either by scoring more goals, by a goal in extra time, or by winning on penalties if you predicted a draw score.</p>
               <p>→ If you predicted 2–1 (home win) and the result was 1–1 with the home team winning on penalties, you get the outcome point — both mean the home team advances.</p>
-              <p>→ The exact score point only applies to the 90-minute score, not the penalty result.</p>
+              <p>→ The exact score is compared against the final result: 90-minute score for penalty shootout games, or the extra-time score if the match was decided by a goal in extra time.</p>
+              <p>→ If you predicted 1–1 and picked the correct penalty winner, you can score all three points — the 1–1 is the final score and your predicted winner matches the actual winner.</p>
             </div>
             <div className="rounded-lg bg-emerald-900/20 border border-emerald-800/40 px-4 py-3 text-xs space-y-1">
               <p className="font-semibold text-emerald-300">Example — any knockout round</p>

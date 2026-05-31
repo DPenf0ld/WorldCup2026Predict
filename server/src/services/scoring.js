@@ -24,7 +24,13 @@ export async function scoreMatch(matchId) {
     const { predictedHomeScore, predictedAwayScore, predictedPenaltyWinner } = pred;
     let points = 0;
 
-    if (predictedHomeScore === homeScore && predictedAwayScore === awayScore) points++;
+    const scoreMatches = predictedHomeScore === homeScore && predictedAwayScore === awayScore;
+    if (scoreMatches) {
+      // In knockout penalty-shootout results, the draw score alone isn't enough —
+      // the penalty winner is part of the "exact" outcome, so require it too.
+      const needsPenWinner = KNOCKOUT_STAGES.has(stage) && penaltyWinner != null;
+      if (!needsPenWinner || predictedPenaltyWinner === penaltyWinner) points++;
+    }
     if (predictedHomeScore + predictedAwayScore === actualTotal) points++;
 
     const predictedWinner = overallWinner(
