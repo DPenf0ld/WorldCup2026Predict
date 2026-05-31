@@ -92,8 +92,8 @@ export default function Rules() {
             Predictions lock automatically — you cannot submit or edit after the deadline.
           </p>
           <div className="space-y-2">
-            <Row label="Group Stage" value="48 hours before each match" />
-            <Row label="Round of 32 onwards" value="72 hours before the stage begins" />
+            <Row label="Group Stage" value="1 hour before each match" />
+            <Row label="Round of 32 onwards" value="1 hour before the stage begins" />
           </div>
           <p className="mt-3 text-xs text-slate-500">
             A countdown timer appears on each match card when the deadline is approaching.
