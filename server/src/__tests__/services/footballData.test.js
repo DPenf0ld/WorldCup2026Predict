@@ -71,12 +71,12 @@ describe('syncFixtures — create and update', () => {
     expect(m.status).toBe('IN_PLAY');
   });
 
-  it('sets predictionDeadline 48 h before kickoff for GROUP stage', async () => {
+  it('sets predictionDeadline 1 h before kickoff for GROUP stage', async () => {
     mockFetchOk([makeRaw({ utcDate: '2026-06-15T12:00:00Z' })]);
     await syncFixtures();
 
     const m = await Match.findOne({ externalId: 1001 });
-    expect(m.predictionDeadline.toISOString()).toBe('2026-06-13T12:00:00.000Z');
+    expect(m.predictionDeadline.toISOString()).toBe('2026-06-15T11:00:00.000Z');
   });
 
   it('does not overwrite predictionDeadline on subsequent syncs', async () => {
