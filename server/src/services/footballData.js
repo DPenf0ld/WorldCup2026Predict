@@ -2,6 +2,11 @@ import Match from '../models/Match.js';
 import { scoreMatch } from './scoring.js';
 import { KNOCKOUT_DEADLINES, GROUP_STAGE_DEADLINE_OFFSET_MS } from '../config/constants.js';
 
+// CACHING NOTE: This is the only module that calls the football-data.org API.
+// All user-facing routes read match data from MongoDB — this function is only invoked
+// by the cron scheduler in index.js (every 5 min, with 6-hour backoff) and the
+// admin manual-sync endpoint (POST /api/admin/fixtures/sync). No user request
+// should trigger an external API call.
 const BASE_URL = 'https://api.football-data.org/v4';
 
 // In-memory rate-limit state — persists for the lifetime of the process

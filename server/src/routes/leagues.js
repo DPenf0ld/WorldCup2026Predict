@@ -3,10 +3,11 @@ import User from '../models/User.js';
 import League from '../models/League.js';
 import ReferralCode from '../models/ReferralCode.js';
 import { authenticate } from '../middleware/auth.js';
+import { writeLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
-router.post('/join', authenticate, async (req, res) => {
+router.post('/join', writeLimiter, authenticate, async (req, res) => {
   try {
     const { referralCode } = req.body;
     if (!referralCode) return res.status(400).json({ error: 'referralCode is required' });

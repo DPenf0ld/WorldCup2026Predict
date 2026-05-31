@@ -3,6 +3,7 @@ import Match from '../models/Match.js';
 import League, { VALID_ENTRY_FEES } from '../models/League.js';
 import ReferralCode from '../models/ReferralCode.js';
 import { requireAdmin } from '../middleware/admin.js';
+import { adminLimiter } from '../middleware/rateLimiter.js';
 import { scoreMatch } from '../services/scoring.js';
 import { syncFixtures } from '../services/footballData.js';
 import { KNOCKOUT_STAGES } from '../config/constants.js';
@@ -10,6 +11,7 @@ import { KNOCKOUT_STAGES } from '../config/constants.js';
 const router = Router();
 
 router.use(requireAdmin);
+router.use(adminLimiter);
 
 // List all matches (admin view — no user JWT required)
 router.get('/matches', async (req, res) => {

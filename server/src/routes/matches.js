@@ -2,11 +2,12 @@ import { Router } from 'express';
 import Match from '../models/Match.js';
 import Prediction from '../models/Prediction.js';
 import { authenticate } from '../middleware/auth.js';
+import { generalLimiter } from '../middleware/rateLimiter.js';
 import { STAGES } from '../config/constants.js';
 
 const router = Router();
 
-router.get('/', authenticate, async (req, res) => {
+router.get('/', generalLimiter, authenticate, async (req, res) => {
   try {
     const { stage } = req.query;
     const filter = stage && STAGES[stage] ? { stage } : {};

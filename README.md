@@ -156,6 +156,16 @@ MONGO_URI=<prod-atlas-uri> npm run seed --workspace=server
 
 ---
 
+## Railway deployment — spending cap (manual step)
+
+Railway does not enforce a spending limit by default. Before going live, set a hard monthly cap in the Railway dashboard:
+
+**Project → Settings → Spending Limit**
+
+This cannot be configured in code and must be done manually. Without it, a traffic spike or runaway cron loop could result in an unexpected bill.
+
+---
+
 ## Group stage fixture data
 
 Groups are seeded from the December 2024 FIFA draw. Verify against [FIFA's official site](https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/canadamexicousa2026) before launch. Knockout placeholders will be updated by the admin as teams advance.

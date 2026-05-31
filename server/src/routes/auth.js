@@ -321,7 +321,7 @@ router.post('/reset-password', authLimiter, async (req, res) => {
 
 // ── Refresh token ─────────────────────────────────────────────────────────────
 
-router.post('/refresh', async (req, res) => {
+router.post('/refresh', authLimiter, async (req, res) => {
   try {
     const token = req.cookies?.refreshToken;
     if (!token) return res.status(401).json({ error: 'No refresh token' });

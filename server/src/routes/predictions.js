@@ -4,11 +4,12 @@ import Prediction from '../models/Prediction.js';
 import League from '../models/League.js';
 import User from '../models/User.js';
 import { authenticate } from '../middleware/auth.js';
+import { generalLimiter, writeLimiter } from '../middleware/rateLimiter.js';
 import { KNOCKOUT_STAGES } from '../config/constants.js';
 
 const router = Router();
 
-router.post('/', authenticate, async (req, res) => {
+router.post('/', writeLimiter, authenticate, async (req, res) => {
   try {
     const { matchId, predictedHomeScore, predictedAwayScore, predictedPenaltyWinner } = req.body;
 
@@ -62,7 +63,7 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-router.get('/mine', authenticate, async (req, res) => {
+router.get('/mine', generalLimiter, authenticate, async (req, res) => {
   try {
     const predictions = await Prediction.find({ userId: req.user.id })
       .populate('matchId', 'homeTeam awayTeam stage kickoffTime homeScore awayScore penaltyWinner resultEntered')
@@ -75,7 +76,10 @@ router.get('/mine', authenticate, async (req, res) => {
   }
 });
 
-router.get('/user/:userId', authenticate, async (req, res) => {
+// FLAGGED: League.members has no index — League.findOne({ members: { $all: [...] } })
+// will full-scan as the league collection grows. Add an index on League.members in
+// the League model if this endpoint sees meaningful traffic.
+router.get('/user/:userId', generalLimiter, authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
 

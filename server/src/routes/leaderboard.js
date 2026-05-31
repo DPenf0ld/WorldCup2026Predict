@@ -3,10 +3,14 @@ import mongoose from 'mongoose';
 import League from '../models/League.js';
 import Prediction from '../models/Prediction.js';
 import { authenticate } from '../middleware/auth.js';
+import { generalLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
-router.get('/', authenticate, async (req, res) => {
+// FLAGGED: This route runs a $lookup aggregation on every request. For leagues with
+// many members it could become expensive under load. Consider caching the result in
+// Redis/memory with a short TTL (e.g. 30s) if this becomes a bottleneck.
+router.get('/', generalLimiter, authenticate, async (req, res) => {
   try {
     const { leagueId } = req.query;
     if (!leagueId) return res.status(400).json({ error: 'leagueId query param is required' });
