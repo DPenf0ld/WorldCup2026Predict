@@ -28,6 +28,7 @@ function pointsBadge(points) {
   );
 }
 
+
 export default function UserPredictions() {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -67,6 +68,9 @@ export default function UserPredictions() {
               <p className="mt-1 text-sm text-slate-400">
                 {data.predictions.length} scored prediction{data.predictions.length !== 1 ? 's' : ''}
               </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Only predictions for finished matches are shown
+              </p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-emerald-400">{totalPoints}</div>
@@ -83,17 +87,25 @@ export default function UserPredictions() {
               const match = pred.matchId;
               const kickoff = new Date(match.kickoffTime);
               const penaltyLabel = (winner) => winner === 'home' ? match.homeTeam : match.awayTeam;
+              const exact = pred.pointsAwarded === 3;
 
               return (
                 <div
                   key={pred._id}
-                  className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3"
+                  className={`rounded-xl border bg-slate-800 px-4 py-3 ${exact ? 'border-yellow-500/50' : 'border-slate-700'}`}
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs text-slate-400 mb-1">
-                        {STAGE_LABELS[match.stage]} ·{' '}
-                        {kickoff.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-slate-400">
+                          {STAGE_LABELS[match.stage]} ·{' '}
+                          {kickoff.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        </span>
+                        {exact && (
+                          <span className="rounded px-1.5 py-0.5 text-xs font-semibold bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
+                            Exact score
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-sm font-medium text-white">
                         <span className="truncate">{match.homeTeam}</span>
@@ -105,7 +117,7 @@ export default function UserPredictions() {
                     <div className="flex items-center gap-4 sm:ml-4 sm:shrink-0">
                       <div className="text-center">
                         <div className="text-xs text-slate-500 mb-0.5">Their pick</div>
-                        <div className="font-bold text-white">
+                        <div className={`font-bold ${exact ? 'text-yellow-400' : 'text-white'}`}>
                           {pred.predictedHomeScore}–{pred.predictedAwayScore}
                         </div>
                         {pred.predictedPenaltyWinner && (

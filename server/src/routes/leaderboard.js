@@ -45,6 +45,9 @@ router.get('/', authenticate, async (req, res) => {
           _id: '$userId',
           totalPoints: { $sum: '$pointsAwarded' },
           predictionsScored: { $sum: 1 },
+          exactScoreCount: {
+            $sum: { $cond: [{ $eq: ['$pointsAwarded', 3] }, 1, 0] },
+          },
         },
       },
     ]);
@@ -59,6 +62,7 @@ router.get('/', authenticate, async (req, res) => {
           name: member.name,
           totalPoints: stats?.totalPoints ?? 0,
           predictionsScored: stats?.predictionsScored ?? 0,
+          exactScoreCount: stats?.exactScoreCount ?? 0,
         };
       })
       .sort((a, b) => b.totalPoints - a.totalPoints)

@@ -297,6 +297,7 @@ export default function Leaderboard() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const leagues = user?.leagues ?? [];
+  const [tableOpen, setTableOpen] = useState(true);
   const [selectedLeague, setSelectedLeague] = useState(leagues[0]?._id ?? leagues[0] ?? '');
 
   const leagueId = selectedLeague;
@@ -361,57 +362,77 @@ export default function Leaderboard() {
               ? `${data.league.paidMemberCount} paid of ${data.league.totalMemberCount} member${data.league.totalMemberCount !== 1 ? 's' : ''}`
               : `${data.leaderboard.length} member${data.leaderboard.length !== 1 ? 's' : ''}`}
           </p>
-          <p className="mb-4 text-xs text-slate-500">Tap a player's name to see their picks</p>
+          <p className="mb-4 text-xs text-slate-500">
+            Tap a player's name to see their picks — only visible for matches that have finished
+          </p>
 
           {data.leaderboard.length === 0 ? (
             <div className="rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-8 text-center text-sm text-slate-400">
               No paid members on the leaderboard yet.
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-700">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-700 bg-slate-800 text-xs uppercase tracking-wider text-slate-400">
-                    <th className="px-4 py-3 text-left">#</th>
-                    <th className="px-4 py-3 text-left">Player</th>
-                    <th className="hidden sm:table-cell px-4 py-3 text-right">Predictions</th>
-                    <th className="px-4 py-3 text-right">Points</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.leaderboard.map((entry) => {
-                    const isMe = entry.userId.toString() === user?.id;
-                    return (
-                      <tr
-                        key={entry.userId}
-                        className={`border-b border-slate-700/50 transition ${
-                          isMe ? 'bg-emerald-900/20' : 'hover:bg-slate-800/50'
-                        }`}
-                      >
-                        <td className="px-4 py-3 text-slate-400">
-                          {MEDAL[entry.rank - 1] ?? entry.rank}
-                        </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => navigate(`/leaderboard/user/${entry.userId}`)}
-                            className="group flex items-center gap-1.5 text-left font-medium text-emerald-400 underline underline-offset-2 decoration-emerald-400/40 hover:decoration-emerald-400 transition"
-                          >
-                            {entry.name}
-                            {isMe && (
-                              <span className="rounded bg-emerald-900/50 px-1.5 py-0.5 text-xs text-emerald-400 no-underline">
-                                you
-                              </span>
-                            )}
-                            <span className="text-slate-500 group-hover:text-slate-300 transition text-xs">→</span>
-                          </button>
-                        </td>
-                        <td className="hidden sm:table-cell px-4 py-3 text-right text-slate-300">{entry.predictionsScored}</td>
-                        <td className="px-4 py-3 text-right font-bold text-white">{entry.totalPoints}</td>
+            <div className="rounded-xl border border-slate-700 overflow-hidden">
+              <button
+                onClick={() => setTableOpen((o) => !o)}
+                className="flex w-full items-center justify-between bg-slate-800 px-4 py-3 text-sm font-medium text-slate-300 hover:text-white transition"
+              >
+                <span>Rankings ({data.leaderboard.length})</span>
+                <span className="text-slate-500 text-xs">{tableOpen ? '▲ collapse' : '▼ expand'}</span>
+              </button>
+
+              {tableOpen && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-700 bg-slate-800/60 text-xs uppercase tracking-wider text-slate-400">
+                        <th className="px-4 py-3 text-left">#</th>
+                        <th className="px-4 py-3 text-left">Player</th>
+                        <th className="px-4 py-3 text-right text-yellow-500">Exact</th>
+                        <th className="px-4 py-3 text-right">Points</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {data.leaderboard.map((entry) => {
+                        const isMe = entry.userId.toString() === user?.id;
+                        return (
+                          <tr
+                            key={entry.userId}
+                            className={`border-b border-slate-700/50 transition ${
+                              isMe ? 'bg-emerald-900/20' : 'hover:bg-slate-800/50'
+                            }`}
+                          >
+                            <td className="px-4 py-3 text-slate-400">
+                              {MEDAL[entry.rank - 1] ?? entry.rank}
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => navigate(`/leaderboard/user/${entry.userId}`)}
+                                className="group flex items-center gap-1.5 text-left font-medium text-emerald-400 underline underline-offset-2 decoration-emerald-400/40 hover:decoration-emerald-400 transition"
+                              >
+                                {entry.name}
+                                {isMe && (
+                                  <span className="rounded bg-emerald-900/50 px-1.5 py-0.5 text-xs text-emerald-400 no-underline">
+                                    you
+                                  </span>
+                                )}
+                                <span className="text-slate-500 group-hover:text-slate-300 transition text-xs">→</span>
+                              </button>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {entry.exactScoreCount > 0 ? (
+                                <span className="font-semibold text-yellow-400">{entry.exactScoreCount}</span>
+                              ) : (
+                                <span className="text-slate-600">0</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right font-bold text-white">{entry.totalPoints}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
