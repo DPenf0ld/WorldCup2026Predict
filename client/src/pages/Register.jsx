@@ -8,7 +8,7 @@ export default function Register() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    name: '', email: '', password: '', referralCode: '',
+    firstName: '', lastName: '', email: '', password: '', referralCode: '',
   });
   const [verificationCode, setVerificationCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
@@ -27,7 +27,7 @@ export default function Register() {
     }
     setSendingCode(true);
     try {
-      await api.post('/auth/send-verification-code', { email: form.email, name: form.name });
+      await api.post('/auth/send-verification-code', { email: form.email, firstName: form.firstName });
       setCodeSent(true);
       setCodeError('');
     } catch (err) {
@@ -43,7 +43,7 @@ export default function Register() {
     setCodeError('');
     setSubmitting(true);
     try {
-      await register(form.name, form.email, form.password, form.referralCode, verificationCode);
+      await register(form.firstName, form.lastName, form.email, form.password, form.referralCode, verificationCode);
       navigate('/fixtures', { replace: true });
     } catch (err) {
       const msg = err.response?.data?.error || 'Registration failed';
@@ -84,17 +84,30 @@ export default function Register() {
           )}
 
           <div className="space-y-4">
-            {/* Name */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">Name</label>
-              <input
-                type="text"
-                required
-                value={form.name}
-                onChange={set('name')}
-                className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
-                placeholder="Your name"
-              />
+            {/* First / Last name */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-300">First name</label>
+                <input
+                  type="text"
+                  required
+                  value={form.firstName}
+                  onChange={set('firstName')}
+                  className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
+                  placeholder="First name"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-300">Last name</label>
+                <input
+                  type="text"
+                  required
+                  value={form.lastName}
+                  onChange={set('lastName')}
+                  className="w-full rounded-lg border border-slate-600 bg-slate-700 px-4 py-2.5 text-white placeholder-slate-400 focus:border-emerald-500 focus:outline-none"
+                  placeholder="Last name"
+                />
+              </div>
             </div>
 
             {/* Email + send code button */}

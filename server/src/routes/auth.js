@@ -59,7 +59,7 @@ function genCode() {
 
 router.post('/send-verification-code', authLimiter, async (req, res) => {
   try {
-    const { email, name } = req.body;
+    const { email, firstName } = req.body;
 
     if (!email || !EMAIL_RE.test(email)) {
       return res.status(400).json({ error: 'A valid email address is required' });
@@ -78,7 +78,7 @@ router.post('/send-verification-code', authLimiter, async (req, res) => {
     );
 
     try {
-      await sendVerificationCode(email, name || 'there', code);
+      await sendVerificationCode(email, firstName || 'there', code);
     } catch (emailErr) {
       console.error('[auth] Failed to send verification email:', emailErr.message);
       return res.status(502).json({ error: 'Could not send verification email. Please try again shortly.' });
@@ -95,15 +95,18 @@ router.post('/send-verification-code', authLimiter, async (req, res) => {
 
 router.post('/register', authLimiter, async (req, res) => {
   try {
-    const { name, email, password, referralCode, verificationCode } = req.body;
+    const { firstName, lastName, email, password, referralCode, verificationCode } = req.body;
 
-    if (!name || !email || !password || !referralCode || !verificationCode) {
+    if (!firstName || !lastName || !email || !password || !referralCode || !verificationCode) {
       return res.status(400).json({
-        error: 'name, email, password, referralCode and verificationCode are all required',
+        error: 'firstName, lastName, email, password, referralCode and verificationCode are all required',
       });
     }
-    if (name.length > 100) {
-      return res.status(400).json({ error: 'Name must be 100 characters or fewer' });
+    if (firstName.trim().length === 0 || firstName.length > 50) {
+      return res.status(400).json({ error: 'First name must be 1–50 characters' });
+    }
+    if (lastName.trim().length === 0 || lastName.length > 50) {
+      return res.status(400).json({ error: 'Last name must be 1–50 characters' });
     }
     if (email.length > 254 || !EMAIL_RE.test(email)) {
       return res.status(400).json({ error: 'Invalid email address' });
@@ -163,7 +166,10 @@ router.post('/register', authLimiter, async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    const name = `${firstName.trim()} ${lastName.trim()}`;
     const user = await User.create({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
       name,
       email,
       passwordHash,
@@ -183,7 +189,7 @@ router.post('/register', authLimiter, async (req, res) => {
 
     res.status(201).json({
       accessToken,
-      user: { id: user._id, name: user.name, email: user.email, leagues: user.leagues },
+      user: { id: user._id, firstName: user.firstName, lastName: user.lastName, name: user.name, email: user.email, leagues: user.leagues },
     });
   } catch (err) {
     console.error(err);
@@ -223,7 +229,7 @@ router.post('/login', authLimiter, async (req, res) => {
 
     res.json({
       accessToken,
-      user: { id: user._id, name: user.name, email: user.email, leagues: user.leagues },
+      user: { id: user._id, firstName: user.firstName, lastName: user.lastName, name: user.name, email: user.email, leagues: user.leagues },
     });
   } catch (err) {
     console.error(err);
@@ -248,7 +254,7 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
         { code, expiresAt: new Date(Date.now() + CODE_EXPIRY_MS), attempts: 0 },
         { upsert: true, new: true }
       );
-      sendPasswordResetCode(user.email, user.name, code).catch(console.error);
+      sendPasswordResetCode(user.email, user.firstName || user.name, code).catch(console.error);
     }
 
     res.json({ message: 'If that email is registered, a reset code has been sent.' });

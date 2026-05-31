@@ -47,7 +47,8 @@ beforeEach(async () => {
 
 function validReg(overrides = {}) {
   return {
-    name: 'Alice',
+    firstName: 'Alice',
+    lastName: 'Test',
     email: 'alice@example.com',
     password: 'password123',
     referralCode: VALID_CODE,
@@ -82,7 +83,7 @@ describe('POST /api/auth/send-verification-code', () => {
   it('returns 200 and stores a code for a new email', async () => {
     const res = await request(app)
       .post(`${AUTH}/send-verification-code`)
-      .send({ email: 'alice@example.com', name: 'Alice' });
+      .send({ email: 'alice@example.com', firstName: 'Alice' });
     expect(res.status).toBe(200);
     expect(res.body.message).toBeTruthy();
 
