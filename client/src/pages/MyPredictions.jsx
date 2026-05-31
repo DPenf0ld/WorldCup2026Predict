@@ -70,8 +70,8 @@ function EditablePredictionCard({ pred }) {
   const match = pred.matchId;
   const isKnockout = KNOCKOUT_STAGES.has(match.stage);
 
-  const [home, setHome] = useState(pred.predictedHomeScore);
-  const [away, setAway] = useState(pred.predictedAwayScore);
+  const [home, setHome] = useState(String(pred.predictedHomeScore));
+  const [away, setAway] = useState(String(pred.predictedAwayScore));
   const [penaltyWinner, setPenaltyWinner] = useState(pred.predictedPenaltyWinner ?? null);
 
   const predictedDraw = home !== '' && away !== '' && Number(home) === Number(away);
@@ -107,33 +107,43 @@ function EditablePredictionCard({ pred }) {
         </span>
         <div className="flex shrink-0 items-center gap-1.5">
           <input
-            type="number"
-            min="0"
-            max="99"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={2}
             value={home}
             onChange={(e) => {
               const raw = e.target.value;
               if (raw === '') { setHome(''); setPenaltyWinner(null); return; }
-              const num = parseInt(raw, 10);
-              if (isNaN(num) || num < 0 || num > 99) return;
-              setHome(num);
-              if (num !== Number(away)) setPenaltyWinner(null);
+              if (!/^\d{1,2}$/.test(raw)) return;
+              setHome(raw);
+              if (Number(raw) !== Number(away)) setPenaltyWinner(null);
+            }}
+            onBlur={() => {
+              if (home !== '' && String(parseInt(home, 10)) !== String(home)) {
+                setHome(String(parseInt(home, 10)));
+              }
             }}
             className="w-12 rounded-md border border-slate-600 bg-slate-700 px-1.5 py-1 text-center text-base font-bold text-white focus:border-emerald-500 focus:outline-none"
           />
           <span className="font-bold text-slate-500">–</span>
           <input
-            type="number"
-            min="0"
-            max="99"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={2}
             value={away}
             onChange={(e) => {
               const raw = e.target.value;
               if (raw === '') { setAway(''); setPenaltyWinner(null); return; }
-              const num = parseInt(raw, 10);
-              if (isNaN(num) || num < 0 || num > 99) return;
-              setAway(num);
-              if (Number(home) !== num) setPenaltyWinner(null);
+              if (!/^\d{1,2}$/.test(raw)) return;
+              setAway(raw);
+              if (Number(home) !== Number(raw)) setPenaltyWinner(null);
+            }}
+            onBlur={() => {
+              if (away !== '' && String(parseInt(away, 10)) !== String(away)) {
+                setAway(String(parseInt(away, 10)));
+              }
             }}
             className="w-12 rounded-md border border-slate-600 bg-slate-700 px-1.5 py-1 text-center text-base font-bold text-white focus:border-emerald-500 focus:outline-none"
           />

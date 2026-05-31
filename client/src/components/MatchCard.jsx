@@ -10,16 +10,21 @@ const KNOCKOUT_STAGES = new Set([
 function ScoreInput({ value, onChange, disabled }) {
   return (
     <input
-      type="number"
-      min="0"
-      max="99"
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      maxLength={2}
       value={value}
       onChange={(e) => {
         const raw = e.target.value;
         if (raw === '') { onChange(''); return; }
-        const num = parseInt(raw, 10);
-        if (isNaN(num) || num < 0 || num > 99) return;
-        onChange(num);
+        if (!/^\d{1,2}$/.test(raw)) return;
+        onChange(raw);
+      }}
+      onBlur={() => {
+        if (value !== '' && String(parseInt(value, 10)) !== String(value)) {
+          onChange(String(parseInt(value, 10)));
+        }
       }}
       disabled={disabled}
       className="w-14 rounded-md border border-slate-600 bg-slate-700 px-2 py-1 text-center text-lg font-bold text-white focus:border-emerald-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
@@ -68,8 +73,8 @@ function LiveDot() {
 
 export default function MatchCard({ match }) {
   const qc = useQueryClient();
-  const [home, setHome] = useState(match.userPrediction?.predictedHomeScore ?? '');
-  const [away, setAway] = useState(match.userPrediction?.predictedAwayScore ?? '');
+  const [home, setHome] = useState(match.userPrediction?.predictedHomeScore != null ? String(match.userPrediction.predictedHomeScore) : '');
+  const [away, setAway] = useState(match.userPrediction?.predictedAwayScore != null ? String(match.userPrediction.predictedAwayScore) : '');
   const [penaltyWinner, setPenaltyWinner] = useState(
     match.userPrediction?.predictedPenaltyWinner ?? null
   );
