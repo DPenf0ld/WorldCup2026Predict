@@ -12,9 +12,15 @@ function ScoreInput({ value, onChange, disabled }) {
     <input
       type="number"
       min="0"
-      max="20"
+      max="99"
       value={value}
-      onChange={(e) => onChange(Math.max(0, parseInt(e.target.value, 10) || 0))}
+      onChange={(e) => {
+        const raw = e.target.value;
+        if (raw === '') { onChange(''); return; }
+        const num = parseInt(raw, 10);
+        if (isNaN(num) || num < 0 || num > 99) return;
+        onChange(num);
+      }}
       disabled={disabled}
       className="w-14 rounded-md border border-slate-600 bg-slate-700 px-2 py-1 text-center text-lg font-bold text-white focus:border-emerald-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
     />

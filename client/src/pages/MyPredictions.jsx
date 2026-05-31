@@ -109,11 +109,15 @@ function EditablePredictionCard({ pred }) {
           <input
             type="number"
             min="0"
-            max="20"
+            max="99"
             value={home}
             onChange={(e) => {
-              setHome(Math.max(0, parseInt(e.target.value, 10) || 0));
-              if (Number(e.target.value) !== Number(away)) setPenaltyWinner(null);
+              const raw = e.target.value;
+              if (raw === '') { setHome(''); setPenaltyWinner(null); return; }
+              const num = parseInt(raw, 10);
+              if (isNaN(num) || num < 0 || num > 99) return;
+              setHome(num);
+              if (num !== Number(away)) setPenaltyWinner(null);
             }}
             className="w-12 rounded-md border border-slate-600 bg-slate-700 px-1.5 py-1 text-center text-base font-bold text-white focus:border-emerald-500 focus:outline-none"
           />
@@ -121,11 +125,15 @@ function EditablePredictionCard({ pred }) {
           <input
             type="number"
             min="0"
-            max="20"
+            max="99"
             value={away}
             onChange={(e) => {
-              setAway(Math.max(0, parseInt(e.target.value, 10) || 0));
-              if (Number(home) !== Number(e.target.value)) setPenaltyWinner(null);
+              const raw = e.target.value;
+              if (raw === '') { setAway(''); setPenaltyWinner(null); return; }
+              const num = parseInt(raw, 10);
+              if (isNaN(num) || num < 0 || num > 99) return;
+              setAway(num);
+              if (Number(home) !== num) setPenaltyWinner(null);
             }}
             className="w-12 rounded-md border border-slate-600 bg-slate-700 px-1.5 py-1 text-center text-base font-bold text-white focus:border-emerald-500 focus:outline-none"
           />
