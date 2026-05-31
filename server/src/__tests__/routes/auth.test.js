@@ -7,10 +7,16 @@ import ReferralCode from '../../models/ReferralCode.js';
 import User from '../../models/User.js';
 import VerificationCode from '../../models/VerificationCode.js';
 
-vi.mock('../../middleware/rateLimiter.js', () => ({
-  authLimiter: (_req, _res, next) => next(),
-  apiLimiter: (_req, _res, next) => next(),
-}));
+vi.mock('../../middleware/rateLimiter.js', () => {
+  const pass = (_req, _res, next) => next();
+  return {
+    authLimiter: pass,
+    apiLimiter: pass,
+    generalLimiter: pass,
+    writeLimiter: pass,
+    adminLimiter: pass,
+  };
+});
 
 vi.mock('../../services/email.js', () => ({
   sendVerificationCode: vi.fn().mockResolvedValue(undefined),

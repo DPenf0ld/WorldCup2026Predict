@@ -27,12 +27,13 @@ export default function CountdownTimer({ deadline }) {
   if (!display) return null;
 
   return (
-    <span className="inline-flex items-center gap-1 rounded bg-amber-900/40 px-2 py-0.5 text-xs font-mono font-medium text-amber-400">
-      <svg className="h-3 w-3" viewBox="0 0 16 16" fill="currentColor">
+    <span className="inline-flex items-center gap-1.5 rounded bg-amber-900/40 px-2 py-0.5 text-xs font-medium text-amber-400">
+      <svg className="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="currentColor">
         <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
         <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
       </svg>
-      {display}
+      <span className="opacity-70">Predict by</span>
+      <span className="font-mono">{display}</span>
     </span>
   );
 }

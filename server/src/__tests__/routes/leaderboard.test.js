@@ -9,10 +9,16 @@ import League from '../../models/League.js';
 import Match from '../../models/Match.js';
 import Prediction from '../../models/Prediction.js';
 
-vi.mock('../../middleware/rateLimiter.js', () => ({
-  authLimiter: (_req, _res, next) => next(),
-  apiLimiter: (_req, _res, next) => next(),
-}));
+vi.mock('../../middleware/rateLimiter.js', () => {
+  const pass = (_req, _res, next) => next();
+  return {
+    authLimiter: pass,
+    apiLimiter: pass,
+    generalLimiter: pass,
+    writeLimiter: pass,
+    adminLimiter: pass,
+  };
+});
 
 const LB = '/api/leaderboard';
 

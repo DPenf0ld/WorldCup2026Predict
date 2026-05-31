@@ -66,7 +66,7 @@ router.post('/', writeLimiter, authenticate, async (req, res) => {
 router.get('/mine', generalLimiter, authenticate, async (req, res) => {
   try {
     const predictions = await Prediction.find({ userId: req.user.id })
-      .populate('matchId', 'homeTeam awayTeam stage kickoffTime homeScore awayScore penaltyWinner resultEntered')
+      .populate('matchId', 'homeTeam awayTeam stage group kickoffTime predictionDeadline homeScore awayScore penaltyWinner resultEntered')
       .sort({ createdAt: -1 })
       .lean();
 

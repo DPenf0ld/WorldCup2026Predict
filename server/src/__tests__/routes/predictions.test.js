@@ -9,10 +9,16 @@ import Prediction from '../../models/Prediction.js';
 import User from '../../models/User.js';
 import League from '../../models/League.js';
 
-vi.mock('../../middleware/rateLimiter.js', () => ({
-  authLimiter: (_req, _res, next) => next(),
-  apiLimiter: (_req, _res, next) => next(),
-}));
+vi.mock('../../middleware/rateLimiter.js', () => {
+  const pass = (_req, _res, next) => next();
+  return {
+    authLimiter: pass,
+    apiLimiter: pass,
+    generalLimiter: pass,
+    writeLimiter: pass,
+    adminLimiter: pass,
+  };
+});
 
 const PRED = '/api/predictions';
 const FUTURE_DEADLINE = new Date(Date.now() + 48 * 60 * 60 * 1000);
@@ -247,6 +253,44 @@ describe('GET /api/predictions/mine', () => {
     const res = await request(app).get(`${PRED}/mine`).set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body.predictions).toEqual([]);
+  });
+
+  it('populates predictionDeadline on each returned match', async () => {
+    const userId = new mongoose.Types.ObjectId().toString();
+    const token = makeToken(userId);
+    const match = await makeGroupMatch();
+
+    await request(app)
+      .post(PRED)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ matchId: match._id, predictedHomeScore: 1, predictedAwayScore: 0 });
+
+    const res = await request(app).get(`${PRED}/mine`).set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.predictions[0].matchId.predictionDeadline).toBeDefined();
+  });
+
+  it('populates group on each returned match', async () => {
+    const userId = new mongoose.Types.ObjectId().toString();
+    const token = makeToken(userId);
+    const match = await Match.create({
+      homeTeam: 'Spain',
+      awayTeam: 'Germany',
+      stage: 'GROUP',
+      group: 'B',
+      kickoffTime: new Date(Date.now() + 50 * 60 * 60 * 1000),
+      predictionDeadline: FUTURE_DEADLINE,
+      resultEntered: false,
+    });
+
+    await request(app)
+      .post(PRED)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ matchId: match._id, predictedHomeScore: 2, predictedAwayScore: 0 });
+
+    const res = await request(app).get(`${PRED}/mine`).set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.predictions[0].matchId.group).toBe('B');
   });
 
   it("returns only the authenticated user's own predictions", async () => {
